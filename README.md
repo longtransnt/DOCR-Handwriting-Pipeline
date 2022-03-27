@@ -20,7 +20,8 @@
 	- VcXsrv installation with: https://sourceforge.net/projects/vcxsrv/
 	- Run XLaunch and input configuration in Ubuntu after finishing installations follow this video configuration: https://www.youtube.com/watch?v=4SZXbl9KVsw&t=183s
 (NOTE: Please download models **weights** folder from [Drive](https://drive.google.com/drive/folders/12RvrCU0ZVf7UfoBRlVD2UvG5H2xiebjs?usp=sharing) and put **"weights"** directory to [Paper Detection's directory](/Paper_Detection/weights))
-##Run the application
+
+## Run the application
 - In order to annotate images with ROI selection: Run 
     ```
     python MaskRCNN.py
