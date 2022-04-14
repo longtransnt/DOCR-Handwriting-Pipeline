@@ -17,6 +17,7 @@ import matplotlib.pyplot as plt
 import base64
 import json
 from json import JSONEncoder
+import shutil
 
 class NumpyArrayEncoder(JSONEncoder):
     def default(self, obj):
@@ -44,7 +45,7 @@ class MaskCRNN(object):
         )  # faster, and good enough for this toy dataset
         self.cfg.OUTPUT_DIR = './weights/'
         self.cfg.MODEL.ROI_HEADS.NUM_CLASSES = 1  # 3 classes (data, fig, hazelnut)
-        self.cfg.MODEL.WEIGHTS = os.path.join(self.cfg.OUTPUT_DIR, "mask_crnn.pth")
+        self.cfg.MODEL.WEIGHTS = os.path.join(self.cfg.OUTPUT_DIR, "maskrcnn-100-train.pth")
         self.cfg.MODEL.ROI_HEADS.SCORE_THRESH_TEST = 0.8  # set the testing threshold for this model
         self.cfg.DATASETS.TEST = ("bills",)
         self.predictor = DefaultPredictor(self.cfg)
@@ -88,7 +89,7 @@ class MaskCRNN(object):
             print(box)
             # Try print the box before and after alteration?
             # print("box after box padding")
-            box = self.alterPredictionBoundingBox(box, 30)
+            box = self.alterPredictionBoundingBox(box, 25)
             # print(box)
 
             v = Visualizer(im[:, :, ::-1],
@@ -96,36 +97,37 @@ class MaskCRNN(object):
                         instance_mode=ColorMode.IMAGE_BW  # remove the colors of unsegmented pixels
                         )
             
-            cv2.drawContours(temp_im,[box],0,(0,0,255),2) #Draw Box of Predicted ROI
+            cv2.drawContours(im,[box],0,(0,0,255),2) #Draw Box of Predicted ROI
 
-            # Idea, use mouse event to mark the 4 new corners of the box variable, then update it, and display it on the cv2 windows
-            roi = cv2.selectROI(temp_im)
-            # If ROI different from box coordinates, register new annotate coordinate
-            if (int(roi[0]) != 0 or int(roi[1]) != 0 or int(roi[2]) != 0 or int(roi[3]) != 0):
-                print(roi)
-                # Assign it to Box
-                box[0][0] = int(roi[0])
-                box[0][1] = int(roi[1])
-                box[1][0] = int(roi[2])
-                box[1][1] = int(roi[1])
-                box[2][0] = int(roi[2])
-                box[2][1] = int(roi[3])
-                box[3][0] = int(roi[1])
-                box[3][1] = int(roi[3])
-                print("Will assign ROI to box")
+            # # Idea, use mouse event to mark the 4 new corners of the box variable, then update it, and display it on the cv2 windows
+            # roi = cv2.selectROI(temp_im)
+            # # If ROI different from box coordinates, register new annotate coordinate
+            # if (int(roi[0]) != 0 or int(roi[1]) != 0 or int(roi[2]) != 0 or int(roi[3]) != 0):
+            #     print(roi)
+            #     # Assign it to Box
+            #     box[0][0] = int(roi[0])
+            #     box[0][1] = int(roi[1])
+            #     box[1][0] = int(roi[2])
+            #     box[1][1] = int(roi[1])
+            #     box[2][0] = int(roi[2])
+            #     box[2][1] = int(roi[3])
+            #     box[3][0] = int(roi[1])
+            #     box[3][1] = int(roi[3])
+            #     print("Will assign ROI to box")
 
+            #print(box)
             #Show ROI of image
-            # cv2.imshow("Output Images", roi_bill_img)
+            # cv2.imshow("Output Images", im)
             # cv2.waitKey(0)
             # cv2.destroyAllWindows()
             
             roi_bill_img = four_point_transform(im, box)
             stuff = self.cropDarkEdges(roi_bill_img)
             v = v.draw_instance_predictions(outputs["instances"].to("cpu"))
-            
             self.convertToAnnotation(image=im, name=name, data=data, box=box)
-            
-            cv2.imwrite(self.output_path + ("/" if self.output_path[-1] != '/' else "") + "out_" + name + ".jpg", stuff)
+            # Exporting image with prediction contours
+            cv2.imwrite(self.output_path + ("/" if self.output_path[-1] != '/Prediction/' else "") + "out_" + name + ".jpg", im)
+
             # cv2.imwrite("tuan.png", roi_bill_img)
             # cv2.namedWindow("Prediction with ROI", cv2.WINDOW_NORMAL)
             # cv2.imshow("Prediction with ROI", roi_bill_img)
@@ -214,6 +216,7 @@ if __name__ == "__main__":
 
     img_list = []
 
+    # Loading Image List
     for img in imgs_dir:
         # Create a list of the images
         if isinstance(img, str):
@@ -228,6 +231,7 @@ if __name__ == "__main__":
 
     filenames = [str(Path(x).stem) for x in img_list]
 
+    # 
     for img, name in zip(img_list, filenames):
         # im = cv2.imread()
         im = cv2.imread(img)
@@ -238,3 +242,18 @@ if __name__ == "__main__":
             data = base64.b64encode(img_file.read())
 
         mask.predict(im=im, name=name, data=data)
+    
+    # # Move from one desitation to another
+    # # To be used (?)
+    # source_folder = r"/home/longtrans/OUCRU-Handwriting-Recognition-reference/Paper_Detection/bill_demo/Subset2/Annotate"
+    # destination_folder = r"/home/longtrans/OUCRU-Handwriting-Recognition-reference/Paper_Detection/bill_demo/Subset2/"
+
+    # # Move all files
+    # for file_name in os.listdir(source_folder):
+    #     # construct full file path
+    #     source = source_folder + file_name
+    #     destination = destination_folder + file_name
+    #     # move only files
+    #     if os.path.isfile(source):
+    #         shutil.move(source, destination)
+    #         print('Moved:', file_name)
