@@ -8,11 +8,7 @@ import numpy as np
 from imantics import Mask
 from imutils.perspective import four_point_transform
 from pathlib import Path
-import cv2
-from time import time
-import imutils
-import matplotlib as mpl
-import matplotlib.pyplot as plt
+
 class MaskCRNN(object):
     cfg = get_cfg()
     
@@ -42,13 +38,13 @@ class MaskCRNN(object):
         outputs = self.predictor(im)
 
         # Pred classes
-        #print(outputs["instances"].pred_classes)
+        # print(outputs["instances"].pred_classes)
 
         # Pred boxes
-        #print(outputs["instances"].pred_boxes)
+        # print(outputs["instances"].pred_boxes)
 
         # Pred masks
-        #print(outputs["instances"].pred_masks)
+        # print(outputs["instances"].pred_masks)
 
         pred_masks_list = outputs["instances"].pred_masks.to('cpu').tolist()
         if len(pred_masks_list) > 0:
@@ -60,39 +56,30 @@ class MaskCRNN(object):
             # print(polygons.points[0])
 
             # Take the first polygons and find the minimum bounding box (there is only 1 class)
-            # This 'box' varriable hold the 4 corners of the predicted text area in our model - Long
             min_rect = cv2.minAreaRect(polygons.points[0])
-            print(min_rect)
             box = cv2.boxPoints(min_rect)
             box = np.intp(box)
 
             # Try print the box?
-            print(box)
+            # print(box)
 
             v = Visualizer(im[:, :, ::-1],
-                        scale=0.5,
+                        scale=1,
                         instance_mode=ColorMode.IMAGE_BW  # remove the colors of unsegmented pixels
                         )
-            
-            cv2.drawContours(im,[box],0,(0,0,255),2) #Draw Box of Predicted ROI
 
-            # Old Code
             roi_bill_img = four_point_transform(im, box)
+
             v = v.draw_instance_predictions(outputs["instances"].to("cpu"))
+            cv2.imwrite(self.output_path + ("/" if self.output_path[-1] != '/' else "") + "out_original_" + name + ".jpg", roi_bill_img)
 
-            # ROI Moust Drag Code
-            roi = cv2.selectROI(im)
-            roi_bill_img = im[int(roi[1]):int(roi[1]+roi[3]), int(roi[0]):int(roi[0]+roi[2])]
-            cv2.imwrite(self.output_path + ("/" if self.output_path[-1] != '/' else "") + "out_" + name + ".jpg", roi_bill_img)
-            #cv2.imwrite("tuan.png", roi_bill_img) # For testing
-            #cv2.imshow("Prediction", v.get_image()[:, :, ::-1])
+            # cv2.imwrite("tuan.png", roi_bill_img)
+            # cv2.imshow("haha", v.get_image()[:, :, ::-1])
 
-            # Idea, use mouse event to mark the 4 new corners of the box variable, then update it, and display it on the cv2 windows
-
-            #Show ROI of image
-            cv2.imshow("Prediction", roi_bill_img)
-            cv2.waitKey(0)
-            cv2.destroyAllWindows()
+            # Show ROI of image
+            # cv2.imshow("haha", roi_bill_img)
+            # cv2.waitKey(0)
+            # cv2.destroyAllWindows()
 
             return v.get_image()[:, :, ::-1], roi_bill_img
 
@@ -107,7 +94,7 @@ if __name__ == "__main__":
         # r"/mnt/c/Users/Tuan/01NVe/RAW_DATA/2021_11_19 11_51 Office Lens (12).jpg"
         # r"/mnt/c/Users/Tuan/01NVe/RAW_DATA/21.011023A (3).jpg"
         # r"/mnt/c/Users/Tuan/Documents/mcocr_public_train_test_shared_data/mcocr_train_data/train_images/mcocr_public_145013acjke.jpg"
-        r"/home/longtrans/OUCRU-Handwriting-Recognition-reference/Paper_Detection/bill_demo/med_records_det",
+        r"/home/longtrans/OUCRU-Handwriting-Recognition-reference/Paper_Detection/bill_demo/med_records_det/Different",
         # r"/mnt/c/Users/antan/Desktop/OENG1183/Handwriting Recognition/bill_demo/med_records_det/21.000440 (12).jpg"
     ]
 

@@ -3,22 +3,21 @@ from detectron2.data import DatasetCatalog, MetadataCatalog
 from detectron2.engine import DefaultTrainer
 from detectron2.config import get_cfg
 
-
 if __name__ == "__main__":
    
     # TODO:change the path
     default_instance = "trainval.json"
-    images_path = "./Subset/" 
-    register_coco_instances('paper', {}, default_instance, images_path)
-    dataset_dicts = DatasetCatalog.get('paper')
-    bills_metadata = MetadataCatalog.get('paper')   
+    images_path = "./Subset2/" 
+    register_coco_instances("paper", {}, default_instance, images_path)
+    dataset_dicts = DatasetCatalog.get("paper")
+    bills_metadata = MetadataCatalog.get("paper")   
 
     cfg = get_cfg()
     cfg.merge_from_file(
         './configs/COCO-InstanceSegmentation/mask_rcnn_R_50_FPN_3x.yaml'
     )
-    cfg.DATASETS.TRAIN = ('paper')
-    cfg.DATASETS.TEST = ('paper')  # no metrics implemented for this dataset
+    cfg.DATASETS.TRAIN = ("paper")
+    cfg.DATASETS.TEST = ("paper")  # no metrics implemented for this dataset
     cfg.DATALOADER.NUM_WORKERS = 2
     cfg.MODEL.WEIGHTS = "detectron2://COCO-InstanceSegmentation/mask_rcnn_R_50_FPN_3x/137849600/model_final_f10217.pkl"  # initialize from model zoo
     cfg.SOLVER.IMS_PER_BATCH = 2
