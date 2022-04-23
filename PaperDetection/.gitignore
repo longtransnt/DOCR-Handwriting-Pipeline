@@ -1,0 +1,4 @@
+/weights/*
+weights.zip
+*.pth
+*Zone.Identifier
