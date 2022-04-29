@@ -2,7 +2,6 @@ import os
 from detectron2.engine import DefaultPredictor
 from detectron2.config import get_cfg
 from operator import itemgetter
-import cv2
 from detectron2.utils.visualizer import ColorMode
 from detectron2.utils.visualizer import Visualizer
 import numpy as np
@@ -99,7 +98,7 @@ class MaskCRNN(object):
             self.convertToAnnotation(image=im, name=name, data=data, box=box)
             # Exporting image with prediction contours
             cv2.imwrite(self.output_path + ("/" if self.output_path[-1] != '/Prediction/' else "") + "out_" + name + ".jpg", im)
-            return v.get_image()[:, :, ::-1], stuff
+            return stuff
 
     def predict(self, im, name, data):
         outputs = self.predictor(im)
@@ -118,7 +117,7 @@ class MaskCRNN(object):
             min_rect = cv2.minAreaRect(polygons.points[0])
             box = cv2.boxPoints(min_rect)
             box = np.intp(box)
-
+         
             v = Visualizer(im[:, :, ::-1],
                         scale=1,
                         instance_mode=ColorMode.IMAGE_BW  # remove the colors of unsegmented pixels
@@ -126,9 +125,11 @@ class MaskCRNN(object):
 
             roi_bill_img = four_point_transform(im, box)
             v = v.draw_instance_predictions(outputs["instances"].to("cpu"))
-            cv2.imwrite(self.output_path + ("/" if self.output_path[-1] != '/' else "") + "out_" + name + ".jpg", roi_bill_img)
+            image_name = self.output_path + ("/" if self.output_path[-1] != '/' else "") + "out_" + name + ".jpg"
+            
+            cv2.imwrite(image_name , roi_bill_img)
 
-            return v.get_image()[:, :, ::-1], roi_bill_img
+            return image_name
 
     def convertToAnnotation(self, image, name, data, box):
         annotatation = {
@@ -194,45 +195,3 @@ class MaskCRNN(object):
             else:
                  roi_bill_img = im[int(roi[1]):int(roi[1]+roi[3]), int(roi[0]):int(roi[0]+roi[2])]
 
-def paperDetectionOperation(operation, input_path,output_path, annotated_output_path):
-    # Test
-    imgs_dir = [
-        #  r"/home/longtrans/OUCRU-Handwriting-Recognition-reference/Paper_Detection/bill_demo/Subset2",
-        r"{}".format(input_path),
-    ]
-    
-    img_list = []
-
-    # Loading Image List
-    for img in imgs_dir:
-        # Create a list of the images
-        if isinstance(img, str):
-            img_path = Path(img)
-            
-            if img_path.is_dir():
-                img_list += [str(x) for x in img_path.glob('*')]
-            else:
-                img_list += [str(img_path)]
-        elif isinstance(img, np.ndarray):
-            img_list += [img]
-
-    filenames = [str(Path(x).stem) for x in img_list]
-
-    mask = MaskCRNN(output_path=output_path, annotated_output_path = annotated_output_path)
-    
-    for img, name in zip(img_list, filenames):
-        # im = cv2.imread()
-        im = cv2.imread(img)
-
-        # print(img)
-        # # Encode the image as Base64
-        with open(img, "rb") as img_file:
-            data = base64.b64encode(img_file.read())
-
-        if operation == "Predict":
-            mask.predict(im=im, name=name, data=data)
-        elif operation == "Annotation":
-            mask.annotate(im=im, name=name, data=data)
-        else: 
-            return
-    
