@@ -54,7 +54,6 @@ if __name__ == '__main__':
         # im = cv2.imread()
 		im = cv2.imread(img)
 
-        
         # # Encode the image as Base64
 		with open(img, "rb") as img_file:
 			data = base64.b64encode(img_file.read())

@@ -39,7 +39,7 @@ class MaskCRNN(object):
             "./PaperDetection/configs/COCO-InstanceSegmentation/mask_rcnn_R_50_FPN_3x.yaml"
         )
         self.cfg.DATALOADER.NUM_WORKERS = 2
-        self.cfg.MODEL.WEIGHTS = "./PaperDetection/weights/model_final.pth"  # initialize from model zoo
+        self.cfg.MODEL.WEIGHTS = "./PaperDetection/weights/model_final_0205.pth"  # initialize from model zoo
         self.cfg.SOLVER.IMS_PER_BATCH = 2
         self.cfg.SOLVER.MAX_ITER = (
             300
