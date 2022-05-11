@@ -39,7 +39,7 @@ class MaskCRNN(object):
             "./PaperDetection/configs/COCO-InstanceSegmentation/mask_rcnn_R_50_FPN_3x.yaml"
         )
         self.cfg.DATALOADER.NUM_WORKERS = 2
-        self.cfg.MODEL.WEIGHTS = "./PaperDetection/weights/model_final.pth"  # initialize from model zoo
+        self.cfg.MODEL.WEIGHTS = "./PaperDetection/weights/model_final_0205.pth"  # initialize from model zoo
         self.cfg.SOLVER.IMS_PER_BATCH = 2
         self.cfg.SOLVER.MAX_ITER = (
             300
@@ -68,7 +68,7 @@ class MaskCRNN(object):
 
             # Take the first polygons and find the minimum bounding box (there is only 1 class)
             # This 'box' varriable hold the 4 corners of the predicted text area in our model - Long
-            min_rect = cv2.minAreaRect(polygons.points[0])
+            min_rect = cv2.minAreaRect(polygons.points[0])  
             box = cv2.boxPoints(min_rect)
             box = np.intp(box)
             print(box)
@@ -125,7 +125,8 @@ class MaskCRNN(object):
 
             roi_bill_img = four_point_transform(im, box)
             v = v.draw_instance_predictions(outputs["instances"].to("cpu"))
-            image_name = self.output_path + ("/" if self.output_path[-1] != '/' else "") + "out_" + name + ".jpg"
+            # + ("/" if self.output_path[-1] != '/' else "")
+            image_name = self.output_path + "/" + "out_" + name + ".jpg"
             
             cv2.imwrite(image_name , roi_bill_img)
 
