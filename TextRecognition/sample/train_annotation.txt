@@ -1,0 +1,11 @@
+./5/out_21.000211(5).jpg--Denoised-size-22_0.png    cao
+./5/out_21.000211(5).jpg--Denoised-size-22_1.png    không gồng giật
+./5/out_21.000211(5).jpg--Denoised-size-22_2.png    còn cứng cơ, hiện
+./5/out_21.000211(5).jpg--Denoised-size-22_3.png    cho bệnh nhân nằm đầ
+./5/out_21.000211(5).jpg--Denoised-size-22_4.png    xúc được, thở êm
+./5/out_21.000211(5).jpg--Denoised-size-22_5.png    vệ sinh răng miện
+./5/out_21.000211(5).jpg--Denoised-size-22_6.jpg    bệnh tỉnh, tiếp
+./5/out_21.000211(5).jpg--Denoised-size-22_7.jpg    /1/2021
+./5/out_21.000211(5).jpg--Denoised-size-22_10.jpg   hien
+./5/out_21.000211(5).jpg--Denoised-size-22_12.jpg   ve sinh
+./5/out_21.000211(5).jpg--Denoised-size-22_13.jpg   5h
