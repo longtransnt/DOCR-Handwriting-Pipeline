@@ -9,7 +9,7 @@ import cv2
 import numpy as np
 from pathlib import Path
 from skimage.filters import threshold_sauvola
-
+import os
 
     
 def applyPreprocesscingStep (image_name, output_dir):
@@ -43,7 +43,10 @@ def applyPreprocesscingStep (image_name, output_dir):
     size = 22
     img_denoised = remove_small_objects(sauvola_bin_image, size)
     img_denoised = img_denoised
-    cv2.imwrite(image_name + '--Denoised-size-'+str(size)+'.png', img_denoised)
+    path, file_name = os.path.split(image_name)
+    image_name = output_dir + "/" + file_name
+    print("PP output:", image_name)
+    cv2.imwrite(image_name, img_denoised)
 
 # =============================================================================
 # Denoise
