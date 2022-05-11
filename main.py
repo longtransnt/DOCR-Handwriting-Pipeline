@@ -62,9 +62,7 @@ if __name__ == '__main__':
 
 		
 		if operation == "Predict":
-			print("Name: " + name)
 			image_name = mask.predict(im=im, name=name, data=data)
-			print(image_name)
 			if(image_name is not None):
 				Amp.applyPreprocesscingStep(image_name = image_name, output_dir=pp_output_path)
 			else: 
