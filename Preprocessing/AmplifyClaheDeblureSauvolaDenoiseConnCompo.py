@@ -44,7 +44,8 @@ def applyPreprocesscingStep (image_name, output_dir):
     img_denoised = remove_small_objects(sauvola_bin_image, size)
     img_denoised = img_denoised
     path, file_name = os.path.split(image_name)
-    image_name = output_dir + "/" + file_name
+    file_name,suffix = os.path.splitext(file_name)
+    image_name = output_dir + "/" + file_name + "_pp.jpg"
     print("PP output:", image_name)
     cv2.imwrite(image_name, img_denoised)
 

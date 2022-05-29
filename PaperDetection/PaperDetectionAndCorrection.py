@@ -71,7 +71,6 @@ class MaskCRNN(object):
             min_rect = cv2.minAreaRect(polygons.points[0])  
             box = cv2.boxPoints(min_rect)
             box = np.intp(box)
-            print(box)
 
             # Sort the array else the order will be fucked
             box = box[box[:, 1].argsort()]
@@ -81,7 +80,7 @@ class MaskCRNN(object):
             if(box[2][0] < box[3][0]):
                 box[[2,3]] = box[[3,2]]
             
-            box = self.alterPredictionBoundingBox(box, 25)
+            # box = self.alterPredictionBoundingBox(box, 25)
             # print(box)
 
             v = Visualizer(im[:, :, ::-1],
@@ -89,15 +88,15 @@ class MaskCRNN(object):
                         instance_mode=ColorMode.IMAGE_BW  # remove the colors of unsegmented pixels
                         )
             
-            cv2.drawContours(im,[box],0,(0,0,255),2) #Draw Box of Predicted ROI
+            # cv2.drawContours(im,[box],0,(0,0,255),2) #Draw Box of Predicted ROI
 
             
             roi_paper_img = four_point_transform(im, box)
             stuff = self.cropDarkEdges(roi_paper_img)
             v = v.draw_instance_predictions(outputs["instances"].to("cpu"))
-            self.convertToAnnotation(image=im, name=name, data=data, box=box)
+            self.convertToAnnotation( name=name, data=data, box=box)
             # Exporting image with prediction contours
-            cv2.imwrite(self.output_path + ("/" if self.output_path[-1] != '/Prediction/' else "") + "out_" + name + ".jpg", im)
+            # cv2.imwrite(self.output_annotation_path + "/" + "out_" + name + ".jpg", roi_paper_img)
             return stuff
 
     def predict(self, im, name, data):
@@ -126,13 +125,13 @@ class MaskCRNN(object):
             roi_bill_img = four_point_transform(im, box)
             v = v.draw_instance_predictions(outputs["instances"].to("cpu"))
             # + ("/" if self.output_path[-1] != '/' else "")
-            image_name = self.output_path + "/" + "out_" + name + ".jpg"
+            image_name = self.output_path + "/"  + name + "pd" + ".jpg"
             
             cv2.imwrite(image_name , roi_bill_img)
 
             return image_name
 
-    def convertToAnnotation(self, image, name, data, box):
+    def convertToAnnotation(self, name, data, box):
         annotatation = {
             'version': "",
             'flags': {},
@@ -166,7 +165,8 @@ class MaskCRNN(object):
             'imageWidth': float(box[2][0])
         }
 
-        filename = self.output_annotation_path + name + '.json'
+        filename = self.output_annotation_path + "/" + name + '.json'
+        print("inside path", filename)
         # Using a JSON string
         with open(filename, 'w') as outfile:
             json.dump(annotatation, outfile)
