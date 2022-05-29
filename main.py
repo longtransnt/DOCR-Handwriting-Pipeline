@@ -27,8 +27,9 @@ input_path = args["input"]
 annotated_output_path = args["annotated"]
 operation = args["operation"]
 
-pd_output_path = output_path 
+pd_output_path = output_path + constant.PAPERDETCTION_FOLDER_SUFFIX
 pd_annotated_output_path = annotated_output_path 	
+pp_output_path = output_path + constant.PREPROCESSING_FOLDER_SUFFIX
 
 if __name__ == '__main__':
     # Inpur directory
@@ -53,7 +54,7 @@ if __name__ == '__main__':
 
 	mask = PaperDetectionAndCorrection.MaskCRNN(output_path=pd_output_path, annotated_output_path = pd_annotated_output_path)
     
-	pp_output_path = output_path 
+	 
 	for img, name in zip(img_list, filenames):
 		im = cv2.imread(img)
 
