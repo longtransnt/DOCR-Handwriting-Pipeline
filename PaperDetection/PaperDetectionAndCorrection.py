@@ -125,7 +125,7 @@ class MaskCRNN(object):
             roi_bill_img = four_point_transform(im, box)
             v = v.draw_instance_predictions(outputs["instances"].to("cpu"))
             # + ("/" if self.output_path[-1] != '/' else "")
-            image_name = self.output_path + "/" + "out_" + name + ".jpg"
+            image_name = self.output_path + "/"  + name + "pd" + ".jpg"
             
             cv2.imwrite(image_name , roi_bill_img)
 
