@@ -36,3 +36,23 @@
     transform: rotate(360deg);
   }
 }
+
+#image-list {
+  overflow-y: scroll;
+  max-height: 30rem;
+}
+
+#image-list > * {
+  flex-wrap: wrap;
+  font-size: 1ch
+}
+
+#image-list > * > img {
+  width: 10rem;
+  height: auto;
+}
+
+#currentImage {
+  width: auto;
+  height: 10rem;
+}
