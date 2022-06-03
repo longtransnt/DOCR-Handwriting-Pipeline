@@ -48,6 +48,7 @@ def applyPreprocesscingStep (image_name, output_dir):
     image_name = output_dir + "/" + file_name + "_pp.jpg"
     print("PP output:", image_name)
     cv2.imwrite(image_name, img_denoised)
+    return image_name
 
 # =============================================================================
 # Denoise
