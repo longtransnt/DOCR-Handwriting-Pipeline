@@ -23,6 +23,7 @@ function App() {
   const [annotation, setAnnotation] = useState('');
   const [annotationList, setAnnotationList] = React.useState([]);
   const [updateState, setUpdateState] = useState(0);
+  const [checked, setChecked] = React.useState(false);
 
   const handleAdd = () => {
     console.log(updateState);
@@ -65,9 +66,14 @@ function App() {
     element.click();
   }
 
+  const handleChange = () => {
+    setChecked(!checked);
+  };
+
   return (
     <div className="App">
-      <header className="App-header">
+      <div className="App-header">
+      <Button className='upload-btn'>Upload</Button>
       <p>Image Annotation</p>
     
       <Container>
@@ -77,11 +83,26 @@ function App() {
             <p>Current Image</p>
             <Stack gap={4} className="col-md-11 mx-auto">
               <img id= "currentImage" src={images[currImage]} />
-              <p>Annotated Text: {annotationList[currImage] !== undefined ? annotationList[currImage]: "None"}</p>
+              <p>Annotated Text: {annotationList[currImage] !== undefined ? annotationList[currImage] : "None"}</p>
               <div>
                 <Form onSubmit={handleAdd}>
                   <Form.Group className="mb-3" controlId="formBasicEmail">
-                    <Form.Control as="textarea" rows={4} placeholder="Enter your annotation here." value={annotation} onChange={(e) => {setAnnotation(e.target.value)}}/>
+                    <Form.Control 
+                    as="textarea" 
+                    rows={4} 
+                    placeholder="Enter your annotation here." 
+                    style={{border: 'none', height: '20vh'}}
+                    value={annotation} 
+                    onChange={(e) => {setAnnotation(e.target.value)}}
+                    />
+                    <div style={{fontSize: '1rem', color: '#005477', fontWeight: '500'}}>
+                      <input 
+                      style={{marginRight: '5px', color: '#005477', fontWeight: '500'}} 
+                      type="checkbox"
+                      checked={checked} onChange={handleChange}
+                      />
+                      Verified by OUCRU
+                    </div>
                   </Form.Group>
                 </Form>
                 <Button variant="primary" onClick={handleAdd}>Save this annotation</Button>{' '}
@@ -109,7 +130,7 @@ function App() {
           </Col>
         </Row>
       </Container>
-      </header>
+      </div>
     </div>
   );
 }
