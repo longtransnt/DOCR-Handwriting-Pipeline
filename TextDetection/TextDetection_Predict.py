@@ -10,6 +10,10 @@ import mmdet
 import os
 from datetime import date
 import datetime
+import numpy as np
+import cv2
+from TextDetection.mmocr.mmocr.utils import check_argument
+
 class TextDetection(object):
     mmocr = None
     input_path = ""
@@ -39,6 +43,7 @@ class TextDetection(object):
         self.cropped_and_export_coordinates_to_csv( img_list, self.output_path)
         
     def cropped_and_export_coordinates_to_csv(self, img_list, output_path):
+        print("TD out",output_path)
         today = date.today()
         arrays = [mmcv.imread(x) for x in img_list]
         filenames = [str(Path(x).name) for x in img_list]
@@ -80,30 +85,65 @@ class TextDetection(object):
                     file_name,suffix = os.path.splitext(file_name)
 
                     # Append coordinates of a box to data frame
-                    box_coordinates = pd.Series([file_name + "_" + str(count) +".jpg", min_x, min_y, max_x, max_y,filename], index=box_column_names)
+                    img_name = file_name + "_" + str(count) +".jpg"
+                    box_coordinates = pd.Series([img_name, min_x, min_y, max_x, max_y,filename], index=box_column_names)
                     boxes_coordinates = boxes_coordinates.append(box_coordinates, ignore_index=True)
 
-                    # box_img = crop_img(arr, box)
+                    box_img = self.crop_img(arr, box)
                     # box_imgs.append(box_img)
-
-                    cropped_images.append(box_imgs)
+                    cv2.imwrite(output_path + "/" + img_name, box_img)
                     count += 1
 
-        boxes_coordinates.to_csv(output_path + 'boxes_coordinates_'+'_.csv')
+        boxes_coordinates.to_csv(output_path +"/"+ 'boxes_coordinates_'+'_.csv')
 
-            # print("--------------------")
-            # boxes_coordinates = boxes_coordinates.astype(int, errors='ignore')
-            # print('boxes_coordinates:\n', boxes_coordinates)
 
-            # # Export coordinates of boxes to csv
+    def crop_img(self, src_img, box, long_edge_pad_ratio=0.4, short_edge_pad_ratio=0.2):
+        """Crop text region with their bounding box.
+
+        Args:
+            src_img (np.array): The original image.
+            box (list[float | int]): Points of quadrangle.
+            long_edge_pad_ratio (float): Box pad ratio for long edge
+                corresponding to font size.
+            short_edge_pad_ratio (float): Box pad ratio for short edge
+                corresponding to font size.
+        """
+        assert check_argument.is_type_list(box, (float, int))
+        assert len(box) == 8
+        assert 0. <= long_edge_pad_ratio < 1.0
+        assert 0. <= short_edge_pad_ratio < 1.0
+
+        h, w = src_img.shape[:2]
+        points_x = np.clip(np.array(box[0::2]), 0, w)
+        points_y = np.clip(np.array(box[1::2]), 0, h)
+
+        box_width = np.max(points_x) - np.min(points_x)
+        box_height = np.max(points_y) - np.min(points_y)
+        font_size = min(box_height, box_width)
+
+        if box_height < box_width:
+            horizontal_pad = long_edge_pad_ratio * font_size
+            vertical_pad = short_edge_pad_ratio * font_size
+        else:
+            horizontal_pad = short_edge_pad_ratio * font_size
+            vertical_pad = long_edge_pad_ratio * font_size
+
+        left = np.clip(int(np.min(points_x) - horizontal_pad), 0, w)
+        top = np.clip(int(np.min(points_y) - vertical_pad), 0, h)
+        right = np.clip(int(np.max(points_x) + horizontal_pad), 0, w)
+        bottom = np.clip(int(np.max(points_y) + vertical_pad), 0, h)
+
+        dst_img = src_img[top:bottom, left:right]
+
+        return dst_img
+            
+
+
+
+
+            
+
         
-
-
-
-
-        
-
-    
 
 
 
