@@ -89,8 +89,9 @@ if __name__ == '__main__':
 		else: 
 			exit
 	#----------------------------Text Detection------------------------------#
+	# Get the name from the files in preprocesscing_output
 	td_img_list = get_img_list_from_directoty(pp_output_path)
-	td.operation( img_list = img_list)
+	td.operation( img_list = td_img_list)
 	
 		
 		
