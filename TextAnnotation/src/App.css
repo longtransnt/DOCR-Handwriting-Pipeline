@@ -1,5 +1,4 @@
 .App {
-  text-align: center;
   font-family: "Roboto", Arial, sans-serif;
 }
 
@@ -16,10 +15,6 @@
   background: rgba(135, 206, 235, 0.2);
   border: 2px dashed #005477;
   border-radius: 24px;
-}
-
-.upload-btn {
-  left: 50%;
 }
 
 p {
@@ -111,7 +106,8 @@ p {
   transition: all 0.3s;
 }
 
-.download-btn {
+.download-btn,
+.upload-btn {
   color: #000000;
   cursor: pointer;
   padding: 8px 1rem;
@@ -130,6 +126,8 @@ p {
 }
 
 .download-btn:hover,
-.download-btn.hover {
+.download-btn.hover,
+.upload-btn:hover,
+.upload-btn.hover {
   background-color: #004666;
 }
