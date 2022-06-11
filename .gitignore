@@ -1,0 +1,9 @@
+/Input
+/Output
+/TextDetection/coco
+/TextDetection/data
+/TextDetection/mmocr_trainer.py
+main_trainer_mmocr.py 
+
+# cache
+.pyc
