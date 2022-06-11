@@ -12,11 +12,11 @@ import Stack from 'react-bootstrap/Stack'
 import ImageUpload from './components/ImageUpload';
 import { ToastContainer, toast } from 'react-toastify';
 import { Scrollbars } from 'react-custom-scrollbars'
-import { SplitButton, Dropdown } from 'react-bootstrap'
+import { Dropdown } from 'react-bootstrap'
+import { IoChevronDown } from 'react-icons/io5'
 
 let verified = {};
-
-// const images = importAll(require.context('./../data', false, /\.(png|jpe?g|svg)$/));
+let confidenceValue = {}
 
 const notiSaving = () => toast.warn('Please input annotation before saving!', {
   position: "top-right",
@@ -46,6 +46,7 @@ function App() {
   const [updateState, setUpdateState] = useState(0);
   const [checked, setChecked] = useState(false);
   const [image, setImage] = useState([]);
+  const [confidenceState, setConfidenceState] = useState('');
 
   const fetchUploads = useCallback(() => {
     fetch('http://annotationnode-env.eba-iv5i9cmp.us-west-2.elasticbeanstalk.com/api/uploads')
@@ -113,6 +114,10 @@ function App() {
     setChecked(!checked)
   };
 
+  const handleConfidenceSelect = (value) => {
+    setConfidenceState(value)
+  };
+
   return (
     <div className="App">
       <div className="App-header">
@@ -140,21 +145,42 @@ function App() {
                   value={annotation} 
                   onChange={(e) => {setAnnotation(e.target.value)}}
                   />
-                  <div style={{fontSize: '1rem', color: '#005477', fontWeight: '500', float: 'right'}}>
-                    <input 
-                    id='checkbox3'
-                    style={{margin: '5px 5px 0 0', color: '#005477', fontWeight: '500', cursor: 'pointer'}} 
-                    type="checkbox"
-                    checked={checked} onChange={handleChecked}
-                    />
-                    <label htmlFor="verified" onClick={handleChecked} style={{cursor: 'pointer'}}>Verified by OUCRU</label>
-                  </div>
-                  <div style={{fontSize: '1rem', color: '#005477', float: 'left'}}>
-                    <label>% Confidence</label>
-                    <input type="text"
-                      style={{margin: '5px 0 0 5px', color: '#005477', width: '3vw', border: 'none'}}
-                    />
-                  </div>
+                  <div style={{display: 'flex', justifyContent: 'space-between'}}>
+                      <div style={{display: 'flex', alignItems: 'center'}}>
+                        <div>
+                          <label style={{fontSize: '1rem', color: '#005477', float: 'left', marginRight: '5px'}}>
+                            % Confidence
+                          </label>
+                        </div>
+                        <div>
+                          <Dropdown onSelect={handleConfidenceSelect}>
+                            <Dropdown.Toggle id="dropdown-split-basic">
+                              {confidenceState === '' ? '100%' : confidenceState}
+                              <IoChevronDown style={{width: '1rem', height: '1rem', marginLeft: '5px'}}/>
+                            </Dropdown.Toggle>
+                            <Dropdown.Menu>
+                              <Dropdown.Item className='dropdown-item' eventKey="100%">100%</Dropdown.Item>
+                              <Dropdown.Item className='dropdown-item' eventKey="75%">75%</Dropdown.Item>
+                              <Dropdown.Item className='dropdown-item' eventKey="50%">50%</Dropdown.Item>
+                              <Dropdown.Item className='dropdown-item' eventKey="25%">25%</Dropdown.Item>
+                            </Dropdown.Menu>
+                          </Dropdown>
+                        </div>
+                      </div>
+                      <div style={{display: 'flex', alignItems: 'center', fontSize: '1rem', color: '#005477'}}>
+                        <div>
+                          <input 
+                            id='checkbox3'
+                            style={{margin: '5px 5px 0 0', color: '#005477', fontWeight: '500', cursor: 'pointer'}} 
+                            type="checkbox"
+                            checked={checked} onChange={handleChecked}
+                          />
+                        </div>
+                        <div>
+                          <label htmlFor="verified" onClick={handleChecked} style={{cursor: 'pointer'}}>Verified by OUCRU</label>
+                        </div>
+                      </div>
+                    </div>
                 </Form.Group>
               </Form>
             </Stack>
@@ -194,20 +220,21 @@ function App() {
             </div>
             <div style={{float: 'right'}}>
               <button className='save-btn' onClick={handleAdd}>Save the annotation</button>{' '}
-              <div className='download-btn'>
-              <SplitButton 
-                id={`split-button-basic`}
-                title={'Download'}
-                
-              >
-                <Dropdown.Item eventKey="1">0% Confidence</Dropdown.Item>
-                <Dropdown.Item eventKey="2">25% Confidence</Dropdown.Item>
-                <Dropdown.Item eventKey="3">50% Confidence</Dropdown.Item>
-                <Dropdown.Item eventKey="4">75% Confidence</Dropdown.Item>
-                <Dropdown.Item eventKey="5">100% Confidence</Dropdown.Item>
-                <Dropdown.Divider />
-                <Dropdown.Item eventKey="6" onClick={WriteToFile}>Download All</Dropdown.Item>
-              </SplitButton>
+              <div style={{float: 'right'}}>
+                <Dropdown>
+                  <Dropdown.Toggle id="dropdown-basic-button">
+                    DOWNLOAD
+                    <IoChevronDown style={{width: '1.5rem', height: '1.5rem', marginLeft: '5px'}}/>
+                  </Dropdown.Toggle>
+                  <Dropdown.Menu>
+                    <Dropdown.Item className='dropdown-item' eventKey="25%">25% Confidence</Dropdown.Item>
+                    <Dropdown.Item className='dropdown-item' eventKey="50%">50% Confidence</Dropdown.Item>
+                    <Dropdown.Item className='dropdown-item' eventKey="75%">75% Confidence</Dropdown.Item>
+                    <Dropdown.Item className='dropdown-item' eventKey="100%">100% Confidence</Dropdown.Item>
+                    <Dropdown.Divider />
+                    <Dropdown.Item className='dropdown-item' eventKey="Download all" onClick={WriteToFile}>Download All</Dropdown.Item>
+                  </Dropdown.Menu>
+                </Dropdown>
               </div>
             </div>
           </Col>
@@ -219,4 +246,3 @@ function App() {
 }
 
 export default App;
-
