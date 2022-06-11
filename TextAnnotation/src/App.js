@@ -14,6 +14,7 @@ import { ToastContainer, toast } from 'react-toastify';
 import { Scrollbars } from 'react-custom-scrollbars'
 import { Dropdown } from 'react-bootstrap'
 import { IoChevronDown } from 'react-icons/io5'
+import getImageList from './service';
 
 let verified = {};
 let confidenceValue = {}
@@ -48,11 +49,9 @@ function App() {
   const [image, setImage] = useState([]);
   const [confidenceState, setConfidenceState] = useState('');
 
+  
   const fetchUploads = useCallback(() => {
-    fetch('http://annotationnode-env.eba-iv5i9cmp.us-west-2.elasticbeanstalk.com/api/uploads')
-      .then(response => response.json().then(data => {
-        setImage(data)
-      }))
+    getImageList().then(data => {setImage(data)})
       .catch(console.error)
   }, []);
 
@@ -66,6 +65,7 @@ function App() {
       if (updateState === 1 ) {
         annotationList[currId] = image[currId] + "\t" + annotation + "\n";
         verified[currId] = checked;
+        confidenceValue[currId] = confidenceState;
         setUpdateState(0);
       }
       else {
@@ -89,6 +89,7 @@ function App() {
      setAnnotation("");
      setUpdateState(1);
      setChecked(false);
+     setConfidenceState('');
   }
 
   function WriteToFile() {
@@ -122,103 +123,109 @@ function App() {
     <div className="App">
       <div className="App-header">
         <button className='upload-btn'>Upload</button>
-      <Container>
-        <Row xs={1} md={2}>
-          <Col>
-            {/* Displaying Image */}
-            <p style={{textAlign: 'center'}}>Current Image</p>
-            <Stack gap={4} className="col-md-11 mx-auto">
-              <img id={currId} src={currImagePath} />
-              <p style={{fontSize: '22px'}}>Annotation Preview: 
-                <span style={{fontSize: '18px', paddingLeft: '5px'}}>
-                  {/* Preview annotation */}
-                  {annotationList[currId] !== undefined ? annotationList[currId].split(image[currId] + "\t") : annotation !== '' ? annotation : "None"}
-                </span>
-              </p>
-              <Form onSubmit={handleAdd}>
-                <Form.Group className="mb-3" controlId="formBasicEmail">
-                  <Form.Control 
-                  as="textarea" 
-                  rows={4} 
-                  placeholder="Enter your annotation here." 
-                  style={{border: 'none', height: '20vh'}}
-                  value={annotation} 
-                  onChange={(e) => {setAnnotation(e.target.value)}}
+        <Container>
+          <Row xs={1} md={2}>
+            <Col>
+              {/* Displaying Image */}
+              <p style={{textAlign: 'center'}}>Current Image</p>
+              <Stack gap={4} className="col-md-11 mx-auto">
+                <div style={{display: 'flex', justifyContent: 'center'}}>
+                  <img 
+                    className='img-display'
+                    id={currId} 
+                    src={currImagePath}
                   />
-                  <div style={{display: 'flex', justifyContent: 'space-between'}}>
-                      <div style={{display: 'flex', alignItems: 'center'}}>
-                        <div>
-                          <label style={{fontSize: '1rem', color: '#005477', float: 'left', marginRight: '5px'}}>
-                            % Confidence
-                          </label>
+                </div>
+                <p style={{fontSize: '22px'}}>Annotation Preview: 
+                  <span style={{fontSize: '18px', paddingLeft: '5px'}}>
+                    {/* Preview annotation */}
+                    {annotationList[currId] !== undefined ? annotationList[currId].split(image[currId] + "\t") : annotation !== '' ? annotation : "None"}
+                  </span>
+                </p>
+                <Form onSubmit={handleAdd}>
+                  <Form.Group className="mb-3" controlId="formBasicEmail">
+                    <Form.Control 
+                    as="textarea" 
+                    rows={4} 
+                    placeholder="Enter your annotation here." 
+                    style={{border: 'none', height: '20vh'}}
+                    value={annotation} 
+                    onChange={(e) => {setAnnotation(e.target.value)}}
+                    />
+                    <div style={{display: 'flex', justifyContent: 'space-between'}}>
+                        <div style={{display: 'flex', alignItems: 'center'}}>
+                          <div>
+                            <label style={{fontSize: '1rem', color: '#005477', float: 'left', marginRight: '5px'}}>
+                              % Confidence
+                            </label>
+                          </div>
+                          <div>
+                            <Dropdown onSelect={handleConfidenceSelect}>
+                              <Dropdown.Toggle id="dropdown-split-basic">
+                                {confidenceState === '' ? '100%' : confidenceState}
+                                <IoChevronDown style={{width: '1rem', height: '1rem', marginLeft: '5px'}}/>
+                              </Dropdown.Toggle>
+                              <Dropdown.Menu>
+                                <Dropdown.Item className='dropdown-item' eventKey="100%">100%</Dropdown.Item>
+                                <Dropdown.Item className='dropdown-item' eventKey="75%">75%</Dropdown.Item>
+                                <Dropdown.Item className='dropdown-item' eventKey="50%">50%</Dropdown.Item>
+                                <Dropdown.Item className='dropdown-item' eventKey="25%">25%</Dropdown.Item>
+                              </Dropdown.Menu>
+                            </Dropdown>
+                          </div>
                         </div>
-                        <div>
-                          <Dropdown onSelect={handleConfidenceSelect}>
-                            <Dropdown.Toggle id="dropdown-split-basic">
-                              {confidenceState === '' ? '100%' : confidenceState}
-                              <IoChevronDown style={{width: '1rem', height: '1rem', marginLeft: '5px'}}/>
-                            </Dropdown.Toggle>
-                            <Dropdown.Menu>
-                              <Dropdown.Item className='dropdown-item' eventKey="100%">100%</Dropdown.Item>
-                              <Dropdown.Item className='dropdown-item' eventKey="75%">75%</Dropdown.Item>
-                              <Dropdown.Item className='dropdown-item' eventKey="50%">50%</Dropdown.Item>
-                              <Dropdown.Item className='dropdown-item' eventKey="25%">25%</Dropdown.Item>
-                            </Dropdown.Menu>
-                          </Dropdown>
+                        <div style={{display: 'flex', alignItems: 'center', fontSize: '1rem', color: '#005477'}}>
+                          <div>
+                            <input 
+                              id='checkbox3'
+                              style={{margin: '5px 5px 0 0', color: '#005477', fontWeight: '500', cursor: 'pointer'}} 
+                              type="checkbox"
+                              checked={checked} onChange={handleChecked}
+                            />
+                          </div>
+                          <div>
+                            <label htmlFor="verified" onClick={handleChecked} style={{cursor: 'pointer'}}>Verified by OUCRU</label>
+                          </div>
                         </div>
                       </div>
-                      <div style={{display: 'flex', alignItems: 'center', fontSize: '1rem', color: '#005477'}}>
-                        <div>
-                          <input 
-                            id='checkbox3'
-                            style={{margin: '5px 5px 0 0', color: '#005477', fontWeight: '500', cursor: 'pointer'}} 
-                            type="checkbox"
-                            checked={checked} onChange={handleChecked}
-                          />
-                        </div>
-                        <div>
-                          <label htmlFor="verified" onClick={handleChecked} style={{cursor: 'pointer'}}>Verified by OUCRU</label>
-                        </div>
-                      </div>
-                    </div>
-                </Form.Group>
-              </Form>
-            </Stack>
-          </Col>
-          <Col>
-            {/* Image List */}
-            <p style={{textAlign: 'center'}}>Image List</p>
-            <Scrollbars>
-              <div id="image-list">
-                {image.map((im, id) => (
-                    <ListGroup.Item 
-                      id={"image_" + id} 
-                      key={id} 
-                      value={id}
-                      variant={
-                        annotationList[id] === undefined ? "danger" : 
-                        verified[id] === false ? "warning" : "success"
-                      } 
-                      style={{cursor: 'pointer'}}
-                      onClick={(e) => {handleListClick(id)}}
-                    >
-                      {im.file_name && im.file_name.length ? (
-                        <img src= {im.thumbnailUrl} />
-                      ) : null}
-                      {im.file_name}
-                    </ListGroup.Item>
-                ))}
-              </div>
-            </Scrollbars>
-          </Col> 
-        </Row>
-      </Container>
-      <Row style={{marginTop: '7rem'}}>
-          <Col>
+                  </Form.Group>
+                </Form>
+              </Stack>
+            </Col>
+            <Col>
+              {/* Image List */}
+              <p style={{textAlign: 'center'}}>Image List</p>
+              <Scrollbars>
+                <div id="image-list">
+                  {image.map((im, id) => (
+                      <ListGroup.Item 
+                        id={"image_" + id} 
+                        key={id} 
+                        value={id}
+                        variant={
+                          annotationList[id] === undefined ? "danger" : 
+                          verified[id] === false ? "warning" : "success"
+                        } 
+                        style={{cursor: 'pointer'}}
+                        onClick={(e) => {handleListClick(id)}}
+                      >
+                        {im.file_name && im.file_name.length ? (
+                          <img src= {im.thumbnailUrl} />
+                        ) : null}
+                        {im.file_name}
+                      </ListGroup.Item>
+                  ))}
+                </div>
+              </Scrollbars>
+            </Col> 
+          </Row>
+        </Container>
+        <Row style={{marginTop: '7rem'}}>
+          <Col style={{position : 'fixed', bottom: 0, marginBottom: '1rem'}}>
             <div style={{float: 'left'}}>
               <ImageUpload />
             </div>
-            <div style={{float: 'right'}}>
+            <div style={{float: 'right', marginRight: '46px'}}>
               <button className='save-btn' onClick={handleAdd}>Save the annotation</button>{' '}
               <div style={{float: 'right'}}>
                 <Dropdown>
