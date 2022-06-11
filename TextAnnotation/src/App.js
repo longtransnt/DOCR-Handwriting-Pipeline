@@ -62,6 +62,7 @@ function App() {
   const [checked, setChecked] = useState(false);
   const [image, setImage] = useState({});
   const [confidenceState, setConfidenceState] = useState('');
+  const [downloadState, setDownloadOption] = useState('');
 
   const fetchUploads = useCallback(() => {
     fetch('http://annotationnode-env.eba-iv5i9cmp.us-west-2.elasticbeanstalk.com/api/uploads')
@@ -79,7 +80,7 @@ function App() {
       if (updateState === 1 ) {
         annotationList[currImage] = image[currImage] + "\t" + annotation + "\n";
         verified[currImage] = checked;
-        setConfidenceState[currImage] = confidenceState;
+        confidenceValue[currImage] = confidenceState;
         setUpdateState(0);
       }
       else {
@@ -111,16 +112,29 @@ function App() {
     if (annotationList.length === 0) {
       notiDownload()
     } else {
-      var data = annotationList.filter(function( element ) {
-        return (element !== undefined && verified[annotationList.indexOf(element)]); // only verified annotation can be downloaded
-      });
-      const file = new Blob(data, {
-        type: "text/plain"
-      });
-      element.href = URL.createObjectURL(file);
-      element.download = "annotation.txt";
-      document.body.appendChild(element);
-      element.click();
+      if (downloadState === '100%') {
+        var data = annotationList.filter(function( element ) {
+          return (element !== undefined && verified[annotationList.indexOf(element)] && confidenceValue[annotationList.indexOf(element)] === '100%'); // only verified annotation can be downloaded
+        });
+        const file = new Blob(data, {
+          type: "text/plain"
+        });
+        element.href = URL.createObjectURL(file);
+        element.download = "annotation-100%.txt";
+        document.body.appendChild(element);
+        element.click();
+      } else {
+        var data = annotationList.filter(function( element ) {
+          return (element !== undefined && verified[annotationList.indexOf(element)]); // only verified annotation can be downloaded
+        });
+        const file = new Blob(data, {
+          type: "text/plain"
+        });
+        element.href = URL.createObjectURL(file);
+        element.download = "annotation.txt";
+        document.body.appendChild(element);
+        element.click();
+      }
     }
   }
 
@@ -130,6 +144,9 @@ function App() {
 
   const handleConfidenceSelect = (value) => {
     setConfidenceState(value)
+  }
+  const handleDownloadOption = (option) => {
+    setDownloadOption(option)
   }
 
   return (
@@ -240,11 +257,11 @@ function App() {
                     <IoChevronDown style={{width: '1.5rem', height: '1.5rem', marginLeft: '5px'}}/>
                   </Dropdown.Toggle>
 
-                  <Dropdown.Menu>
-                    <Dropdown.Item className='dropdown-item' eventKey="25%">25% Confidence</Dropdown.Item>
-                    <Dropdown.Item className='dropdown-item' eventKey="50%">50% Confidence</Dropdown.Item>
-                    <Dropdown.Item className='dropdown-item' eventKey="75%">75% Confidence</Dropdown.Item>
-                    <Dropdown.Item className='dropdown-item' eventKey="100%">100% Confidence</Dropdown.Item>
+                  <Dropdown.Menu onSelect={handleDownloadOption}>
+                    <Dropdown.Item className='dropdown-item' eventKey="25%" onClick={WriteToFile}>25% Confidence</Dropdown.Item>
+                    <Dropdown.Item className='dropdown-item' eventKey="50%" onClick={WriteToFile}>50% Confidence</Dropdown.Item>
+                    <Dropdown.Item className='dropdown-item' eventKey="75%" onClick={WriteToFile}>75% Confidence</Dropdown.Item>
+                    <Dropdown.Item className='dropdown-item' eventKey="100%" onClick={WriteToFile}>100% Confidence</Dropdown.Item>
                     <Dropdown.Divider />
                     <Dropdown.Item className='dropdown-item' eventKey="Download all" onClick={WriteToFile}>Download All</Dropdown.Item>
                   </Dropdown.Menu>
