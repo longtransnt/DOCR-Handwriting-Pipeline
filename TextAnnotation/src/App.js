@@ -14,7 +14,7 @@ import { ToastContainer, toast } from 'react-toastify';
 import { Scrollbars } from 'react-custom-scrollbars'
 import { Dropdown } from 'react-bootstrap'
 import { IoChevronDown } from 'react-icons/io5'
-import getImageList from './service';
+import{getImageList, updateUploadById} from './service';
 
 let verified = {};
 let confidenceValue = {}
@@ -66,6 +66,25 @@ function App() {
         annotationList[currId] = image[currId] + "\t" + annotation + "\n";
         verified[currId] = checked;
         confidenceValue[currId] = confidenceState;
+        console.log(annotationList);
+        console.log(verified);
+        console.log(confidenceValue);
+
+        // var extracted_confidence = parseInt(confidenceValue[0].split("%")[0]);
+        //New Put to API
+        var updatedUpload = {
+          "id" : image[currId].id,
+          // "file_name" : image[currId].file_name,
+          // "image_id": image[currId].image_id,
+          // "thumbnail_id": image[currId].thumbnail_id,
+          "ground_truth": annotation,
+          "confidence": 100,
+          "is_verified": checked
+        }
+        console.log(updatedUpload);
+
+        const put_response = updateUploadById(updatedUpload.id, updatedUpload)
+        // console.log(put_response)
         setUpdateState(0);
       }
       else {
@@ -74,8 +93,8 @@ function App() {
         setAnnotationList(newList);
       }
     // Move to next image
-    setAnnotation('')
-    setCurrId(currId + 1);
+    // setAnnotation('')
+    // setCurrId(currId + 1);
     } else {
       setUpdateState(0);
       notiSaving(); // not allow to save if no annotation
@@ -85,11 +104,18 @@ function App() {
   const handleListClick = (id) => {
      // Move to this image
      setCurrId(id);
+     console.log(id)
      setCurrImagePath(image[id].imageUrl)
-     setAnnotation("");
+     setAnnotation(image[id].ground_truth);
      setUpdateState(1);
-     setChecked(false);
-     setConfidenceState('');
+     setChecked(image[id].is_verified);
+     if(image[id].confidence != null){
+      setConfidenceState(image[id].confidence)   
+     } else {
+      //Default confidence
+      setConfidenceState('100%');
+     }
+     
   }
 
   function WriteToFile() {
@@ -203,8 +229,8 @@ function App() {
                         key={id} 
                         value={id}
                         variant={
-                          annotationList[id] === undefined ? "danger" : 
-                          verified[id] === false ? "warning" : "success"
+                          image[id].ground_truth === null ? "danger" : 
+                          image[id].is_verified === false ? "warning" : "success"
                         } 
                         style={{cursor: 'pointer'}}
                         onClick={(e) => {handleListClick(id)}}
