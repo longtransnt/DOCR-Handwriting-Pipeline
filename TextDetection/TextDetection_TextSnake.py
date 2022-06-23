@@ -70,10 +70,6 @@ class TextDetection(object):
             for bboxes in bboxes_list:
                 print('bboxes size:', len(bboxes))
                 for bbox in bboxes:
-                    # box_res = {}
-                    # box_res['box'] = [round(x) for x in bbox[:-1]]
-                    # box_res['box_score'] = float(bbox[-1])
-                    # box = bbox[:8]
                     if len(bbox) > 9:
                         min_x = min(bbox[0:-1:2])
                         min_y = min(bbox[1:-1:2])
