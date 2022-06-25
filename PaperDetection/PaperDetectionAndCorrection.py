@@ -117,6 +117,8 @@ class MaskCRNN(object):
             box = cv2.boxPoints(min_rect)
             box = np.intp(box)
          
+
+
             v = Visualizer(im[:, :, ::-1],
                         scale=1,
                         instance_mode=ColorMode.IMAGE_BW  # remove the colors of unsegmented pixels
@@ -129,6 +131,21 @@ class MaskCRNN(object):
             
             cv2.imwrite(image_name , roi_bill_img)
 
+            # Sort the array else the order will be fucked
+            box = box[box[:, 1].argsort()]
+            if (box[0][0] > box[1][0]):
+                 box[[0,1]] = box[[1,0]]
+
+            if(box[2][0] < box[3][0]):
+                box[[2,3]] = box[[3,2]]
+            
+            box = self.alterPredictionBoundingBox(box, 2,2)
+
+            roi_bill_img = four_point_transform(im, box)
+            return_img = self.cropDarkEdges(roi_bill_img)
+            image_name = self.output_path + "/"  + name + "pd" + "_alter" + ".jpg"
+            
+            cv2.imwrite(image_name , return_img)
             return image_name
 
     def convertToAnnotation(self, name, data, box):
@@ -171,14 +188,40 @@ class MaskCRNN(object):
         with open(filename, 'w') as outfile:
             json.dump(annotatation, outfile)
 
-    def alterPredictionBoundingBox(self, box, lenghthenRate = 10):
+    def alterPredictionBoundingBox(self, box, lenghthenYRate = 2, lenghthenXRate  = 2):
+        print ("before box:")
+        print(box)
         yList = [box[0][1], box[1][1], box[2][1], box[3][1]]
+        xList = [box[0][0], box[1][0], box[2][0], box[3][0]]
+
+        # Get top and bottom Y of the images
         currentBottomYValue = max(yList)
         currentTopYValue = min(yList)
-        h = (currentBottomYValue - currentTopYValue)
-        adjustedHeight =  h * (lenghthenRate/100)
-        box[2][1] =  currentBottomYValue + adjustedHeight
-        box[3][1] =  currentBottomYValue + adjustedHeight
+
+        # Get Left and right X of the images
+        currentRightXValue = max(xList)
+        currentLeftXValue = min(xList)
+       
+        h_x = (currentRightXValue - currentLeftXValue)
+        h_y = (currentBottomYValue - currentTopYValue)
+
+        adjustedYHeight =  h_y * (lenghthenYRate/100)
+        adjustedXWidth = h_x * (lenghthenXRate/100)
+
+        # Adjust the bottom value 
+        box[2][1] =  currentBottomYValue + adjustedYHeight
+        box[3][1] =  currentBottomYValue + adjustedYHeight
+
+        # Adjust the right value
+        box[1][0] = currentRightXValue + adjustedXWidth
+        box[2][0] = currentRightXValue + adjustedXWidth
+
+        #adjust the left value
+        box[0][0] = currentLeftXValue - adjustedXWidth
+        box[3][0] = currentLeftXValue - adjustedXWidth
+
+        print("after box: ")
+        print(box)
         return box
 
     def cropDarkEdges(self, image):
