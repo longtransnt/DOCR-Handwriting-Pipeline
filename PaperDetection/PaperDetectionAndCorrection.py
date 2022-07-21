@@ -127,7 +127,7 @@ class MaskCRNN(object):
             roi_bill_img = four_point_transform(im, box)
             v = v.draw_instance_predictions(outputs["instances"].to("cpu"))
             # + ("/" if self.output_path[-1] != '/' else "")
-            image_name = self.output_path + "/"  + name + "pd" + ".jpg"
+            image_name = self.output_path + "/Alter/"  + name + "pd" + ".jpg"
             
             cv2.imwrite(image_name , roi_bill_img)
 
@@ -139,11 +139,11 @@ class MaskCRNN(object):
             if(box[2][0] < box[3][0]):
                 box[[2,3]] = box[[3,2]]
             
-            box = self.alterPredictionBoundingBox(box, 2,2)
+            box = self.alterPredictionBoundingBox(box, 1,1)
 
             roi_bill_img = four_point_transform(im, box)
             return_img = self.cropDarkEdges(roi_bill_img)
-            image_name = self.output_path + "/"  + name + "pd" + "_alter" + ".jpg"
+            image_name = self.output_path + "/Alter/"  + name + "pd" + "_alter" + ".jpg"
             
             cv2.imwrite(image_name , return_img)
             return image_name
@@ -188,7 +188,7 @@ class MaskCRNN(object):
         with open(filename, 'w') as outfile:
             json.dump(annotatation, outfile)
 
-    def alterPredictionBoundingBox(self, box, lenghthenYRate = 2, lenghthenXRate  = 2):
+    def alterPredictionBoundingBox(self, box, lenghthenYRate = 1, lenghthenXRate  = 1):
         print ("before box:")
         print(box)
         yList = [box[0][1], box[1][1], box[2][1], box[3][1]]
