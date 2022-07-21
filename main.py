@@ -1,7 +1,6 @@
 import argparse
 from PaperDetection import PaperDetectionAndCorrection
 from Preprocessing import AmplifyClaheDeblureSauvolaDenoiseConnCompo as Amp
-from TextDetection import TextDetection_Predict
 import sys
 import base64
 import cv2
@@ -64,7 +63,7 @@ if __name__ == '__main__':
 	filenames = [str(Path(x).stem) for x in img_list]
 	
 	mask = PaperDetectionAndCorrection.MaskCRNN(output_path=pd_output_path, annotated_output_path = pd_annotated_output_path)
-	td = TextDetection_Predict.TextDetection(output_path=td_output_path)
+	# td = TextDetection_Predict.TextDetection(output_path=td_output_path)
 	 
 
 	#----------------------------Paper Detection and Preprocesscing------------------------------#
@@ -88,10 +87,10 @@ if __name__ == '__main__':
 			cropped = mask.annotate(im=im, name=name, data=data)
 		else: 
 			exit
-	#----------------------------Text Detection------------------------------#
-	# Get the name from the files in preprocesscing_output
-	td_img_list = get_img_list_from_directoty(pp_output_path)
-	td.operation( img_list = td_img_list)
+	# #----------------------------Text Detection------------------------------#
+	# # Get the name from the files in preprocesscing_output
+	# td_img_list = get_img_list_from_directoty(pp_output_path)
+	# td.operation( img_list = td_img_list)
 	
 		
 		
