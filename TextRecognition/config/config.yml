@@ -1,0 +1,34 @@
+display:
+  model_summary: False
+  trainable_params_summary: False
+  optimizer_summary: False
+language:
+  alphabet: ' 9rG/sIĐgfNlbn6XTUâê7<đE(COvA+ơ>yôa1M0#qSxpd)tZeP5okQV.ưKHDhRcL%z,Bum3ă428i'
+  max_length: 25
+preprocess:
+  output_path: './out/'
+data:
+  image_height: 32
+  image_width: 240
+  pad_and_keep_ratio: True
+  batch_size: 64
+  train_path: './data/train'
+  valid_path: './data/test'
+  test_path: './data/test'
+train:
+  worker_count: 4
+  fine_tune: False
+  learning_rate: 1
+  rho_rate: 0.95
+  epsilon: 1e-8
+  gradient_clipping: 5
+  validation_interval: 500
+  save_interval: 1e+5
+  total_interval_count: 500
+  model_name: tuan
+  random_seed: 1111
+ResNet:
+  input_color_channel: 3
+  output_feature_channel: 512
+BiLSTM:
+  hidden_size: 512
