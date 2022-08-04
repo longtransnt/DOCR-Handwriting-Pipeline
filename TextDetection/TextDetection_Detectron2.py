@@ -26,20 +26,22 @@ class NumpyArrayEncoder(JSONEncoder):
             return obj.tolist()
         return JSONEncoder.default(self, obj)
 
-class TextDetection_FasterRCNN(object):
+
+class FasterRCNN(object):
     cfg = get_cfg()
     output_path = ""
     output_annotation_path = ""
 
     def __init__(self, output_path, annotated_output_path):
         self.output_path = output_path
-        self.output_annotation_path = annotated_output_path 
-        
+        self.output_annotation_path = annotated_output_path
+
         self.cfg.merge_from_file(
             "./TextDetection/configs/faster_rcnn_R_50_FPN_3x.yaml"
         )
         self.cfg.DATALOADER.NUM_WORKERS = 2
-        self.cfg.MODEL.WEIGHTS = "./TextDetection/weights/td_model_final.pth"  # initialize from model zoo
+        # initialize from model zoo
+        self.cfg.MODEL.WEIGHTS = "./TextDetection/weights/td_model_final.pth"
         self.cfg.SOLVER.IMS_PER_BATCH = 2
         self.cfg.SOLVER.MAX_ITER = (
             300
@@ -48,39 +50,52 @@ class TextDetection_FasterRCNN(object):
             128
         )  # faster, and good enough for this toy dataset
         self.cfg.OUTPUT_DIR = './td_d2_output/'
-        self.cfg.MODEL.ROI_HEADS.NUM_CLASSES = 1  # 3 classes (data, fig, hazelnut)
+        # 3 classes (data, fig, hazelnut)
+        self.cfg.MODEL.ROI_HEADS.NUM_CLASSES = 1
         # self.cfg.MODEL.WEIGHTS = os.path.join(self.cfg.OUTPUT_DIR, "model_final.pth")
-        self.cfg.MODEL.ROI_HEADS.SCORE_THRESH_TEST = 0.8  # set the testing threshold for this model
+        # set the testing threshold for this model
+        self.cfg.MODEL.ROI_HEADS.SCORE_THRESH_TEST = 0.8
         # self.cfg.DATASETS.TEST = ("bills",)
         self.predictor = DefaultPredictor(self.cfg)
-    
-    def predict(self, im, name, data):
-        original_name = name[:-3] + ".jpg"
-        name = name[:-5]
-        outputs = self.predictor(im)
+
+    def predict(self, original, name, data):
+        td_input_img = cv2.imread(name)
+
+        original_path = name[:-7] + ".jpg"
+
+        path, original_file_name_full = os.path.split(original_path)
+        original_bare_file_name, suffix = os.path.splitext(
+            original_file_name_full)
+
+        if not os.path.exists(self.output_path + "/" + original_bare_file_name):
+            os.mkdir(os.path.join(self.output_path,  original_bare_file_name))
+
+        outputs = self.predictor(td_input_img)
         pred_boxes_list = outputs["instances"].pred_boxes.tensor.cpu().numpy()
 
-        box_column_names = ['image_name', 'min_x', 'min_y', 'max_x', 'max_y', "original_image_name"]
+        box_column_names = ['image_name', 'min_x', 'min_y',
+                            'max_x', 'max_y', "original_image_name"]
         boxes_coordinates = pd.DataFrame(columns=box_column_names)
 
         i = 0
         for [min_x, min_y, max_x, max_y] in pred_boxes_list:
-            min_x, min_y, max_x, max_y = int(min_x), int(min_y), int(max_x), int(max_y)
+            min_x, min_y, max_x, max_y = int(min_x), int(
+                min_y), int(max_x), int(max_y)
             # print(min_x, min_y, max_x, max_y)
-            image_name_suffix = name + "td_d2_" + str(i) + ".jpg"
-            image_name = self.output_path + "/"  + image_name_suffix
+            image_name_suffix = original_bare_file_name + \
+                "_td_d2_" + str(i) + ".jpg"
+            image_name = self.output_path + "/" + \
+                original_bare_file_name + "/" + image_name_suffix
 
-            box_coordinates = pd.Series([image_name_suffix, min_x, min_y, max_x, max_y,original_name], index=box_column_names)
-            boxes_coordinates = boxes_coordinates.append(box_coordinates, ignore_index=True)
+            row = pd.Series(
+                [image_name_suffix, min_x, min_y, max_x, max_y, original_file_name_full], index=box_column_names)
+            boxes_coordinates = pd.concat([boxes_coordinates,
+                                          row], axis=1)
 
+            # crop_img = cv2.cvtColor(original, cv2.COLOR_BGR2RGB)
+            crop_img = original[min_y:max_y, min_x:max_x]
+            cv2.imwrite(image_name, crop_img)
+            i += 1
 
-            crop_img = cv2.cvtColor(im, cv2.COLOR_BGR2RGB)
-            crop_img = crop_img[min_y:max_y, min_x:max_x]
-            cv2.imwrite(image_name , crop_img)
-            i+=1
-
-        boxes_coordinates.to_csv(self.output_annotation_path +"/"+ name +'_boxes_coordinates'+'_.csv')
-
-
-
-
+        boxes_coordinates.to_csv(
+            self.output_path + "/" + original_bare_file_name + "/" + image_name_suffix + '_boxes_coordinates'+'_.csv')
