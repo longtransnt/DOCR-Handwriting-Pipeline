@@ -71,6 +71,7 @@ class FasterRCNN(object):
             os.mkdir(os.path.join(self.output_path,  original_bare_file_name))
 
         outputs = self.predictor(td_input_img)
+
         pred_boxes_list = outputs["instances"].pred_boxes.tensor.cpu().numpy()
 
         box_column_names = ['image_name', 'min_x', 'min_y',
@@ -99,3 +100,5 @@ class FasterRCNN(object):
 
         boxes_coordinates.to_csv(
             self.output_path + "/" + original_bare_file_name + "/" + image_name_suffix + '_boxes_coordinates'+'_.csv')
+
+        return self.output_path + "/" + original_bare_file_name + "/"
