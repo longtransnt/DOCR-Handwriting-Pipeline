@@ -111,6 +111,7 @@ if __name__ == '__main__':
                 cropped_img, image_name = maskRCNN.predict(
                     im=im, name=name, data=data)
                 if(image_name is not None):
+
                     # Preprocesscing
                     processed_img, processed_img_path = Amp.applyPreprocesscingStep(
                         image_name=image_name, output_dir=pp_output_path)
