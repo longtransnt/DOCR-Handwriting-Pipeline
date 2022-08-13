@@ -5,6 +5,7 @@ Output/
 /TextDetection/data
 /TextDetection/weights
 /TextDetection/mmocr_trainer.py
+/TextRecognition/vietocr/weights
 main_trainer_mmocr.py 
 /Backup
 # cache
