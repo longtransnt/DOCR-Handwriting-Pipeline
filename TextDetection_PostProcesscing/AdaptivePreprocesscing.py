@@ -1,7 +1,7 @@
 import cv2
 import matplotlib.pyplot as plt
 import numpy as np
-
+import os
 from natsort import os_sorted
 from pathlib import Path
 from skimage.filters import threshold_sauvola
@@ -149,8 +149,19 @@ def denoise(output_dir_denoised, img_path, blur_degree=33, tile_size=(8, 8), vis
         # cv2_imshow(img_denoised)
         print('-'*80)
 
-    cv2.imwrite(str(output_dir_denoised / image_name) +
-                '-denoised' + image_suffix, img_denoised)
+    original_name = image_name.split('pdpd')[0]
+
+    print(original_name)
+    isExist = os.path.exists(
+        str(output_dir_denoised) + "/" + original_name)
+
+    if not isExist:
+        # Create a new directory because it does not exist
+        os.makedirs(str(output_dir_denoised) + "/" + original_name)
+        print("The new directory is created for " + original_name)
+
+    cv2.imwrite(str(output_dir_denoised) + "/" + original_name + "/" +
+                str(image_name) + '-denoised' + image_suffix, img_denoised)
 
     return img_denoised
 
@@ -204,7 +215,7 @@ def applyAdaptivePreprocesscingStep(image_path, output_dir):
     # print(*images_name, sep='\n')
     SIZE = 15  # SIZE in range (10, 31); best range (10, 21)
     output_dir = Path(output_dir)
-    output_dir_denoised = output_dir / 'denoised'
+    output_dir_denoised = output_dir / 'denoised-output'
 
     Path.mkdir(output_dir, exist_ok=True)
     Path.mkdir(output_dir_denoised, exist_ok=True)

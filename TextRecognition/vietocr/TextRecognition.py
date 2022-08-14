@@ -25,8 +25,8 @@ class TextRecognition(object):
         self.config['device'] = 'cuda:0'
         self.config['predictor']['beamsearch'] = False
 
-        self.bigram_lm = self.create_n_gram(n=2)
-        self.trigram_lm = self.create_n_gram(n=3)
+        # self.bigram_lm = self.create_n_gram(n=2)
+        # self.trigram_lm = self.create_n_gram(n=3)
 
     def create_n_gram(self, n, laplace=0.1, num=10):
         data_path = Path('./TextRecognition/ngram/data/')
@@ -52,48 +52,53 @@ class TextRecognition(object):
         next_prob = None
         prediction = detector.predict(img)
 
-        if(ngram):
-            words = prediction.split()
-            for index, word in enumerate(words):
-                ngram_pred = ""
+        words = prediction.split()
+        correction = ""
+        for index, word in enumerate(words):
+            word = self.dictionaryCorrection(word)
+            correction += " " + word
 
-                print("-"*10)
-                if (index == 0):
-                    ngram_pred += word
+        # if(ngram):
+        #     for index, word in enumerate(words):
+        #         ngram_pred = ""
 
-                print(index, word)
+        #         print("-"*10)
+        #         if (index == 0):
+        #             ngram_pred += word
 
-                if (next_token is not None and next_prob is not None):
-                    edit_distance = self.levenshteinDistance(
-                        word, next_token)
-                    print("edit distance between " + word + " and " +
-                          next_token + " is " + str(edit_distance))
+        #         print(index, word)
 
-                prev = () if self.bigram_lm.n == 1 else tuple(
-                    words[:index+1])
+        #         if (next_token is not None and next_prob is not None):
+        #             edit_distance = self.levenshteinDistance(
+        #                 word, next_token)
+        #             print("edit distance between " + word + " and " +
+        #                   next_token + " is " + str(edit_distance))
 
-                print("prev", prev)
-                blacklist = [word] + \
-                    (["</s>"] if index < len(words) - 1 else [])
+        #         prev = () if self.bigram_lm.n == 1 else tuple(
+        #             words[:index+1])
 
-                next_token, next_prob = self.bigram_lm._best_candidate(
-                    prev, 0, without=blacklist)
+        #         print("prev", prev)
+        #         blacklist = [word] + \
+        #             (["</s>"] if index < len(words) - 1 else [])
 
-                tri_next_token, tri_next_prob = self.trigram_lm._best_candidate(
-                    prev, 0, without=blacklist)
+        #         next_token, next_prob = self.bigram_lm._best_candidate(
+        #             prev, 0, without=blacklist)
 
-                if (next_token != "</s>"):
-                    if (next_prob > 0.26):
-                        ngram_pred += " " + next_token
+        #         tri_next_token, tri_next_prob = self.trigram_lm._best_candidate(
+        #             prev, 0, without=blacklist)
 
-                print("N-gram result:")
-                print(" * next token", next_token)
-                print(" * next prob", next_prob)
+        #         if (next_token != "</s>"):
+        #             if (next_prob > 0.26):
+        #                 ngram_pred += " " + next_token
 
-                print(" * trigram next token", tri_next_token)
-                print(" * trigram next prob", tri_next_prob)
+        #         print("N-gram result:")
+        #         print(" * next token", next_token)
+        #         print(" * next prob", next_prob)
 
-        return prediction
+        #         print(" * trigram next token", tri_next_token)
+        #         print(" * trigram next prob", tri_next_prob)
+
+        return prediction, correction
 
     def levenshteinDistance(self, s1, s2):
         if len(s1) > len(s2):
@@ -111,3 +116,19 @@ class TextRecognition(object):
             distances = distances_
         return distances[-1]
         # Something something
+
+    def dictionaryCorrection(self, word):
+        dictionary = {"động": 2, "Magnesulfate": 3, "Midazolam": 2, "Arduan": 1,
+                      "gồng": 1, "HA": 1, "lần": 1, "Hết": 1, "kiểm": 1, "SpO2": 1, "mmHg": 2, "FiO2": 1, "ổn": 1, "tỉnh": 1, "nằm": 1}
+        distance_resuls = {}
+        for d, value in dictionary.items():
+            distance = self.levenshteinDistance(word.lower(), d.lower())
+            if distance == 0:
+                print(word)
+                return word
+            distance_resuls[d] = distance
+        best_key = min(distance_resuls, key=distance_resuls.get)
+        if distance_resuls[best_key] <= dictionary[best_key]:
+            print(best_key)
+            return best_key
+        return word

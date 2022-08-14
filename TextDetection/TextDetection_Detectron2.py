@@ -54,7 +54,7 @@ class FasterRCNN(object):
         self.cfg.MODEL.ROI_HEADS.NUM_CLASSES = 1
         # self.cfg.MODEL.WEIGHTS = os.path.join(self.cfg.OUTPUT_DIR, "model_final.pth")
         # set the testing threshold for this model
-        self.cfg.MODEL.ROI_HEADS.SCORE_THRESH_TEST = 0.5
+        self.cfg.MODEL.ROI_HEADS.SCORE_THRESH_TEST = 0.6
         # self.cfg.DATASETS.TEST = ("bills",)
         self.predictor = DefaultPredictor(self.cfg)
 
@@ -72,6 +72,17 @@ class FasterRCNN(object):
 
         outputs = self.predictor(td_input_img)
 
+        v = Visualizer(original[:, :, ::-1],
+                       #    metadata=valid_metadata,
+                       scale=1,
+                       instance_mode=ColorMode.IMAGE   # remove the colors of unsegmented pixels
+                       )
+        v = v.draw_instance_predictions(outputs["instances"].to("cpu"))
+
+        visualize_path = self.output_path + "/" + \
+            original_bare_file_name + "/" + "visualize.jpg"
+        cv2.imwrite(visualize_path, v.get_image()[:, :, ::-1])
+
         pred_boxes_list = outputs["instances"].pred_boxes.tensor.cpu().numpy()
 
         box_column_names = ['image_name', 'min_x', 'min_y',
@@ -88,10 +99,10 @@ class FasterRCNN(object):
             image_name = self.output_path + "/" + \
                 original_bare_file_name + "/" + image_name_suffix
 
-            row = pd.Series(
-                [image_name_suffix, min_x, min_y, max_x, max_y, original_file_name_full], index=box_column_names)
+            new_row = pd.DataFrame([image_name_suffix, min_x, min_y, max_x,
+                                   max_y, original_file_name_full], index=box_column_names).T
             boxes_coordinates = pd.concat([boxes_coordinates,
-                                          row], axis=1)
+                                          new_row])
 
             # crop_img = cv2.cvtColor(original, cv2.COLOR_BGR2RGB)
             crop_img = original[min_y:max_y, min_x:max_x]

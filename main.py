@@ -1,4 +1,5 @@
 import argparse
+from operator import contains
 from unittest import skip
 from PaperDetection import PaperDetection
 from Preprocessing import AmplifyClaheDeblureSauvolaDenoiseConnCompo as Amp
@@ -28,6 +29,10 @@ ap.add_argument("-op", "--operation", type=str, default="Predict",
                 help="Predict or Annotation")
 ap.add_argument("-is", "--isolated", type=str, default="None",
                 help="Isolated operation of module")
+ap.add_argument("-eval", "--evaluated", type=str,
+                default="None", help="Path to evalaluation csv file")
+ap.add_argument("-eval-img", "--evaluated_image_path", type=str,
+                default="None", help="Path to evalaluation image")
 args = vars(ap.parse_args())
 #----------------------------Assign req. arguments------------------------------#
 output_path = args["output"]
@@ -35,6 +40,8 @@ input_path = args["input"]
 annotated_output_path = args["annotated"]
 operation = args["operation"]
 isolated = args["isolated"]
+evaluation_path = args["evaluated"]
+evaluation_img_path = args["evaluated_image_path"]
 #----------------------------Assign output path------------------------------#
 pd_output_path = output_path + constant.PAPERDETCTION_FOLDER_SUFFIX
 pd_annotated_output_path = annotated_output_path
@@ -97,9 +104,9 @@ if __name__ == '__main__':
         records_count = 0
         img_list = get_img_list_from_directoty(input_path)
         filenames = [str(Path(x).stem) for x in img_list]
-        # =============================================================================
-        # Paper Detection and Preprocesscing
-        # =============================================================================
+        # # =============================================================================
+        # # Paper Detection and Preprocesscing
+        # # =============================================================================
         for img, name in zip(img_list, filenames):
             im = cv2.imread(img)
 
@@ -117,9 +124,9 @@ if __name__ == '__main__':
                         image_name=image_name, output_dir=pp_output_path)
                     print('─' * 100)
                     print("Preprocessing Image: " + processed_img_path)
-            # ======================================================================================
-            # Text Detection
-            # ======================================================================================
+        #     # ======================================================================================
+        #     # Text Detection
+        #     # ======================================================================================
                     text_detection_folder = fastRCNN.predict(original=cropped_img,
                                                              name=processed_img_path, data=data)
                     print("Text Detection Finished - Result exported in : ",
@@ -131,7 +138,7 @@ if __name__ == '__main__':
                                          for x in cropped_img_list]
 
                     for cropped_img, cropped_filename in zip(cropped_img_list, cropped_filenames):
-                        if(cropped_img.endswith(".csv")):
+                        if(cropped_img.endswith(".csv") or "visualize" in cropped_img):
                             continue
                         applyAdaptivePreprocesscingStep(
                             cropped_img, adaptive_output_path)
@@ -145,33 +152,44 @@ if __name__ == '__main__':
         # ======================================================================================
         # Text Recognition
         # ======================================================================================
-        tr_img_list = get_img_list_from_directoty(
-            adaptive_output_path + '/denoised/')
-        tr_filenames = [str(Path(x).stem) for x in tr_img_list]
-        dashed_line = '=' * 100
-        head = f'{"filename":35s}\t' \
-            f'{"predicted_string (non-bigram)":35s}\t' \
-            f'{"predicted_string (bigram)":35s}'
 
-        text_recognition_csv_headers = [
-            'filename', 'predicted_string (non-bigram)', 'predicted_string (bigram)']
-        text_recognition_csv = pd.DataFrame(
-            columns=text_recognition_csv_headers)
+        tr_img_directories = get_img_list_from_directoty(
+            adaptive_output_path + '/denoised-output/')
+        for directory in tr_img_directories:
+            tr_img_list = get_img_list_from_directoty(directory)
+            tr_filenames = [str(Path(x).stem) for x in tr_img_list]
 
-        print(f'{dashed_line}\n{head}\n{dashed_line}')
+            dashed_line = '=' * 100
+            head = f'{"filename":35s}\t' \
+                f'{"predicted_string (non-bigram)":35s}\t' \
+                f'{"predicted_string (bigram)":35s}'
 
-        for img, name in zip(tr_img_list, tr_filenames):
-            prediction = vgg19_transformer.infer(img)
-            row_output = f'{name:20s}\t{prediction:35s}' \
-                f'\t{prediction:35s}'
-            print(row_output)
-            row = pd.Series([name, prediction, prediction],
-                            index=text_recognition_csv_headers)
-            text_recognition_csv = pd.concat([text_recognition_csv,
-                                              row], axis=0)
-        date_time = datetime.datetime.now()
-        text_recognition_csv.to_csv(
-            tr_output_path + "/" + str(date_time) + '.csv')
+            text_recognition_csv_headers = [
+                'filename', 'predicted_string (non-correction)', 'predicted_string (correction)']
+            text_recognition_csv = pd.DataFrame(
+                columns=text_recognition_csv_headers)
+
+            print(f'{dashed_line}\n{head}\n{dashed_line}')
+            for img, name in zip(tr_img_list, tr_filenames):
+
+                prediction, correction = vgg19_transformer.infer(img)
+                row_output = f'{name:20s}\t{prediction:35s}' \
+                    f'\t{correction:35s}'
+                print(row_output)
+                row = pd.Series([name, prediction, prediction],
+                                index=text_recognition_csv_headers)
+                text_recognition_csv = pd.concat([text_recognition_csv,
+                                                  row], axis=0)
+            date_time = datetime.datetime.now()
+            text_recognition_csv.to_csv(
+                tr_output_path + "/" + str(date_time) + '.csv')
+    elif operation == "Eval":
+        if evaluation_path == "None":
+            raise ValueError(
+                'Need Evaluation csv path to be specified')
+        if evaluation_img_path == "None":
+            raise ValueError(
+                'Need Evaluation img path to be specified')
     else:
         exit
 
