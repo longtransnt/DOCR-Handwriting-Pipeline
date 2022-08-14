@@ -141,7 +141,7 @@ class MaskCRNN(object):
             if(box[2][0] < box[3][0]):
                 box[[2, 3]] = box[[3, 2]]
 
-            box = self.alterPredictionBoundingBox(box, 1, 1)
+            box = self.alterPredictionBoundingBox(box, 1, 0.5)
 
             roi_bill_img = four_point_transform(im, box)
             return_img = self.cropDarkEdges(roi_bill_img)
@@ -206,6 +206,10 @@ class MaskCRNN(object):
 
         adjustedYHeight = h_y * (lenghthenYRate/100)
         adjustedXWidth = h_x * (lenghthenXRate/100)
+
+        # Adjust the top value
+        box[0][1] = currentTopYValue - adjustedYHeight
+        box[1][1] = currentTopYValue - adjustedYHeight
 
         # Adjust the bottom value
         box[2][1] = currentBottomYValue + adjustedYHeight
