@@ -10,6 +10,7 @@ from os import listdir
 from os.path import isfile, join
 from Misc import constant
 
+
 unannotated_csv_path = constant.DEFAULT_PATH + constant.OUTPUT_SUFFIX + \
     constant.TEXTDETECTION_FOLDER_SUFFIX + '/Batch 1.2/un-annotated.csv'
 ouput_path = constant.DEFAULT_PATH + constant.OUTPUT_SUFFIX + \

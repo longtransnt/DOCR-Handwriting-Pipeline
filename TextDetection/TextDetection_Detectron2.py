@@ -54,7 +54,7 @@ class FasterRCNN(object):
         self.cfg.MODEL.ROI_HEADS.NUM_CLASSES = 1
         # self.cfg.MODEL.WEIGHTS = os.path.join(self.cfg.OUTPUT_DIR, "model_final.pth")
         # set the testing threshold for this model
-        self.cfg.MODEL.ROI_HEADS.SCORE_THRESH_TEST = 0.5
+        self.cfg.MODEL.ROI_HEADS.SCORE_THRESH_TEST = 0.8
         # self.cfg.DATASETS.TEST = ("bills",)
         self.predictor = DefaultPredictor(self.cfg)
 
