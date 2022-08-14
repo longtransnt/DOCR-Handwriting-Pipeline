@@ -177,3 +177,43 @@ if __name__ == '__main__':
 
     print("# Pipeline finished " + operation +
           " with " + str(records_count) + " medical records")
+
+
+def PaperDetectionCaller(img, name):
+    maskRCNN = PaperDetection.MaskCRNN(
+        output_path=pd_output_path, annotated_output_path=pd_annotated_output_path)
+
+    if(maskRCNN):
+        print(" ✔ Paper Detection  -   MaskRCNN model loaded")
+    else:
+        raise ValueError(
+            ' ❌ Paper Detection    -   MaskRCNN model failed to load')
+
+    cropped_img, image_name = maskRCNN.predict(im=img, name=name)
+    return cropped_img
+
+
+def PreprocessingCaller(img_path):
+    processed_img, processed_img_path = Amp.applyPreprocesscingStep(
+        image_name=img_path, output_dir=pp_output_path)
+    return processed_img
+
+
+def TextDetectionCaller(img, name):
+    fastRCNN = TextDetection_Detectron2.FasterRCNN(
+        output_path=td_output_path, annotated_output_path=td_output_path)
+
+    if(fastRCNN):
+        print(" ✔ Text Detection   -   FastRCNN model loaded")
+    else:
+        raise ValueError(
+            '   ❌ Text Detection   -   FastRCNN model failed to load')
+
+    # TODO: edit to Return records with bounding box
+    text_detection_folder = fastRCNN.predict(original=cropped_img,
+                                             name=processed_img_path, data=data)
+    return text_detection_folder
+
+
+def AdaptivePreprocesscingCaller():
+    return "Not implemented yet"

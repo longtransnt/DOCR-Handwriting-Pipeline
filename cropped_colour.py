@@ -10,12 +10,13 @@ from os import listdir
 from os.path import isfile, join
 from Misc import constant
 
-unannotated_csv_path = constant.DEFAULT_PATH + constant.OUTPUT_SUFFIX + \ 
-constant.TEXTDETECTION_FOLDER_SUFFIX + '/Batch 1.2/un-annotated.csv'
+
+unannotated_csv_path = constant.DEFAULT_PATH + constant.OUTPUT_SUFFIX + \
+    constant.TEXTDETECTION_FOLDER_SUFFIX + '/Batch 1.2/un-annotated.csv'
 ouput_path = constant.DEFAULT_PATH + constant.OUTPUT_SUFFIX + \
     constant.TEXTDETECTION_FOLDER_SUFFIX + '/Batch 1.2/'
 sorted_coordinate_path = constant.DEFAULT_PATH + constant.OUTPUT_SUFFIX + \
-    constant.TEXTDETECTION_FOLDER_SUFFIX + '/Sorted/coordinate/coordinate_csv/'
+    constant.TEXTDETECTION_FOLDER_SUFFIX + '/Batch 1.2/coords_csv/'
 original_image_path = constant.DEFAULT_PATH + constant.OUTPUT_SUFFIX + \
     constant.TEXTDETECTION_FOLDER_SUFFIX + '/Sorted/original/'
 other = './Output/TextDetection/Batch 1.2/un-annotated.csv'
