@@ -86,7 +86,7 @@ class FasterRCNN(object):
         pred_boxes_list = outputs["instances"].pred_boxes.tensor.cpu().numpy()
 
         box_column_names = ['image_name', 'min_x', 'min_y',
-                            'max_x', 'max_y', "original_image_name"]
+                            'max_x', 'max_y', "original_image_name", "ground_truth"]
         boxes_coordinates = pd.DataFrame(columns=box_column_names)
 
         i = 0
@@ -100,7 +100,7 @@ class FasterRCNN(object):
                 original_bare_file_name + "/" + image_name_suffix
 
             new_row = pd.DataFrame([image_name_suffix, min_x, min_y, max_x,
-                                   max_y, original_file_name_full], index=box_column_names).T
+                                   max_y, original_file_name_full, ""], index=box_column_names).T
             boxes_coordinates = pd.concat([boxes_coordinates,
                                           new_row])
 
@@ -109,7 +109,7 @@ class FasterRCNN(object):
             cv2.imwrite(image_name, crop_img)
             i += 1
 
-        boxes_coordinates.to_csv(
-            self.output_path + "/" + original_bare_file_name + "/" + image_name_suffix + '_boxes_coordinates'+'_.csv')
+        boxes_coordinates.to_json(orient="records", path_or_buf=self.output_path + "/" +
+                                  original_bare_file_name + "/" + 'coordinates.json')
 
         return self.output_path + "/" + original_bare_file_name + "/"
