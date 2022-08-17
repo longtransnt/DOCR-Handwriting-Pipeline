@@ -166,7 +166,7 @@ def denoise(output_dir_denoised, img_path, blur_degree=33, tile_size=(8, 8), vis
     return img_denoised
 
 
-def denoise_manual(output_dir_denoised, img_path, blur_degree, apply_CLAHE=True, tile_size=(8, 8), scale=1, window_size=51):
+def denoise_manual(output_dir_denoised, img_path, blur_degree, apply_CLAHE=True, tile_size=(8, 8), scale=1, window_size=51, denoised_size=12):
     # =============================================================================
     # Read input image
     # =============================================================================
@@ -202,7 +202,7 @@ def denoise_manual(output_dir_denoised, img_path, blur_degree, apply_CLAHE=True,
     th, sauvola_bin_image = cv2.threshold(
         sauvola_image, 0, 255, cv2.THRESH_BINARY_INV)
 
-    img_denoised = remove_small_objects(sauvola_bin_image, blur_degree/2)
+    img_denoised = remove_small_objects(sauvola_bin_image, denoised_size)
 
     cv2.imwrite(str(output_dir_denoised / image_name) +
                 '-denoised' + image_suffix, img_denoised)

@@ -8,6 +8,7 @@ from TextDetection_PostProcesscing.AdaptivePreprocesscing import applyAdaptivePr
 from TextRecognition.vietocr.TextRecognition import TextRecognition
 import sys
 import base64
+import json
 import cv2
 import numpy as np
 import datetime
@@ -78,21 +79,21 @@ if __name__ == '__main__':
     print("# " + operation)
     if operation == "Predict":
 
-        maskRCNN = PaperDetection.MaskCRNN(
-            output_path=pd_output_path, annotated_output_path=pd_annotated_output_path)
-        if(maskRCNN):
-            print(" ✔ Paper Detection  -   MaskRCNN model loaded")
-        else:
-            raise ValueError(
-                '❌ Paper Detection - MaskRCNN model failed to load')
+        # maskRCNN = PaperDetection.MaskCRNN(
+        #     output_path=pd_output_path, annotated_output_path=pd_annotated_output_path)
+        # if(maskRCNN):
+        #     print(" ✔ Paper Detection  -   MaskRCNN model loaded")
+        # else:
+        #     raise ValueError(
+        #         '❌ Paper Detection - MaskRCNN model failed to load')
 
-        fastRCNN = TextDetection_Detectron2.FasterRCNN(
-            output_path=td_output_path, annotated_output_path=td_output_path)
-        if(fastRCNN):
-            print(" ✔ Text Detection   -   FastRCNN model loaded")
-        else:
-            raise ValueError(
-                '❌ Text Detection - FastRCNN model failed to load')
+        # fastRCNN = TextDetection_Detectron2.FasterRCNN(
+        #     output_path=td_output_path, annotated_output_path=td_output_path)
+        # if(fastRCNN):
+        #     print(" ✔ Text Detection   -   FastRCNN model loaded")
+        # else:
+        #     raise ValueError(
+        #         '❌ Text Detection - FastRCNN model failed to load')
 
         vgg19_transformer = TextRecognition()
         if(vgg19_transformer):
@@ -101,53 +102,53 @@ if __name__ == '__main__':
             raise ValueError(
                 '❌ Text Detection - VGG19-Transormer model failed to load')
 
-        records_count = 0
-        img_list = get_img_list_from_directoty(input_path)
-        filenames = [str(Path(x).stem) for x in img_list]
-        # # =============================================================================
-        # # Paper Detection and Preprocesscing
-        # # =============================================================================
-        for img, name in zip(img_list, filenames):
-            im = cv2.imread(img)
+        # records_count = 0
+        # img_list = get_img_list_from_directoty(input_path)
+        # filenames = [str(Path(x).stem) for x in img_list]
+        # # # =============================================================================
+        # # # Paper Detection and Preprocesscing
+        # # # =============================================================================
+        # for img, name in zip(img_list, filenames):
+        #     im = cv2.imread(img)
 
-            # Encode the image as Base64
-            with open(img, "rb") as img_file:
-                data = base64.b64encode(img_file.read())
+        #     # Encode the image as Base64
+        #     with open(img, "rb") as img_file:
+        #         data = base64.b64encode(img_file.read())
 
-                # Paper Detection
-                cropped_img, image_name = maskRCNN.predict(
-                    im=im, name=name, data=data)
-                if(image_name is not None):
+        #         # Paper Detection
+        #         cropped_img, image_name = maskRCNN.predict(
+        #             im=im, name=name, data=data)
+        #         if(image_name is not None):
 
-                    # Preprocesscing
-                    processed_img, processed_img_path = Amp.applyPreprocesscingStep(
-                        image_name=image_name, output_dir=pp_output_path)
-                    print('─' * 100)
-                    print("Preprocessing Image: " + processed_img_path)
-        #     # ======================================================================================
-        #     # Text Detection
-        #     # ======================================================================================
-                    text_detection_folder = fastRCNN.predict(original=cropped_img,
-                                                             name=processed_img_path, data=data)
-                    print("Text Detection Finished - Result exported in : ",
-                          text_detection_folder)
+        #             # Preprocesscing
+        #             processed_img, processed_img_path = Amp.applyPreprocesscingStep(
+        #                 image_name=image_name, output_dir=pp_output_path)
+        #             print('─' * 100)
+        #             print("Preprocessing Image: " + processed_img_path)
+        # #     # ======================================================================================
+        # #     # Text Detection
+        # #     # ======================================================================================
+        #             text_detection_folder = fastRCNN.predict(original=cropped_img,
+        #                                                      name=processed_img_path, data=data)
+        #             print("Text Detection Finished - Result exported in : ",
+        #                   text_detection_folder)
 
-                    cropped_img_list = get_img_list_from_directoty(
-                        text_detection_folder)
-                    cropped_filenames = [str(Path(x).stem)
-                                         for x in cropped_img_list]
+        #             cropped_img_list = get_img_list_from_directoty(
+        #                 text_detection_folder)
+        #             cropped_filenames = [str(Path(x).stem)
+        #                                  for x in cropped_img_list]
 
-                    for cropped_img, cropped_filename in zip(cropped_img_list, cropped_filenames):
-                        if(cropped_img.endswith(".csv") or "visualize" in cropped_img):
-                            continue
-                        applyAdaptivePreprocesscingStep(
-                            cropped_img, adaptive_output_path)
-                    print('─' * 100)
-                    # td.operation(input_path = td_input)
-                    records_count += 1
-                else:
-                    print("Null found at: ", image_name)
-                img_list = get_img_list_from_directoty(input_path)
+        #             for cropped_img, cropped_filename in zip(cropped_img_list, cropped_filenames):
+        #                 if(cropped_img.endswith(".csv") or cropped_img.endswith(".json") or "visualize" in cropped_img):
+        #                     continue
+        #                 applyAdaptivePreprocesscingStep(
+        #                     cropped_img, adaptive_output_path)
+        #             print('─' * 100)
+        #             # td.operation(input_path = td_input)
+        #             records_count += 1
+        #         else:
+        #             print("Null found at: ", image_name)
+        #         img_list = get_img_list_from_directoty(input_path)
 
         # ======================================================================================
         # Text Recognition
@@ -156,6 +157,18 @@ if __name__ == '__main__':
         tr_img_directories = get_img_list_from_directoty(
             adaptive_output_path + '/denoised-output/')
         for directory in tr_img_directories:
+            text_recognition_json_result = []
+
+            path, dir_name = os.path.split(directory)
+
+            # Opening JSON file
+            json_file = open(td_output_path + "/" + dir_name +
+                             "pdpd/" + "coordinates.json")
+
+            # returns JSON object as
+            # a dictionary
+            json_file_data = json.load(json_file)
+
             tr_img_list = get_img_list_from_directoty(directory)
             tr_filenames = [str(Path(x).stem) for x in tr_img_list]
 
@@ -171,18 +184,28 @@ if __name__ == '__main__':
 
             print(f'{dashed_line}\n{head}\n{dashed_line}')
             for img, name in zip(tr_img_list, tr_filenames):
+                split = name.split('-denoised')
+                split_name = split[0]
+                split_suffix = split[1]
+                cor_dict = list(
+                    filter(lambda line: line['image_name'].split('.jpg')[0] == split_name, json_file_data))
 
                 prediction, correction = vgg19_transformer.infer(img)
                 row_output = f'{name:20s}\t{prediction:35s}' \
                     f'\t{correction:35s}'
                 print(row_output)
-                row = pd.Series([name, prediction, prediction],
-                                index=text_recognition_csv_headers)
-                text_recognition_csv = pd.concat([text_recognition_csv,
-                                                  row], axis=0)
-            date_time = datetime.datetime.now()
-            text_recognition_csv.to_csv(
-                tr_output_path + "/" + str(date_time) + '.csv')
+                en = correction.encode("utf8")
+                print(en)
+                print(en.decode("utf8"))
+
+                cor_dict[0]["ground_truth"] = str(correction.encode("utf8"))
+
+                text_recognition_json_result.append(cor_dict)
+
+            base = Path(tr_output_path)
+            jsonpath = base / (name + ".json")
+            jsonpath.write_text(json.dumps(text_recognition_json_result))
+
     elif operation == "Eval":
         if evaluation_path == "None":
             raise ValueError(
