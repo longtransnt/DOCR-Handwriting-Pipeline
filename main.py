@@ -4,7 +4,7 @@ from unittest import skip
 from PaperDetection import PaperDetection
 from Preprocessing import AmplifyClaheDeblureSauvolaDenoiseConnCompo as Amp
 from TextDetection import TextDetection_Detectron2
-from TextDetection_PostProcesscing.AdaptivePreprocesscing import applyAdaptivePreprocesscingStep
+from TextDetection_PostProcesscing.AdaptivePreprocesscing import applyAdaptivePreprocesscingStep, applyAdaptivePreprocesscingManualStep, denoise
 from TextRecognition.vietocr.TextRecognition import TextRecognition
 import sys
 import base64
@@ -16,6 +16,23 @@ from pathlib import Path
 import pandas as pd
 import os
 from Misc import constant
+from flask_cors import CORS, cross_origin
+from flask import Response
+import urllib.request
+from flask import Flask, flash, request, redirect, url_for, render_template
+from werkzeug.utils import secure_filename
+
+
+#----------------------------Configurations for Flask------------------------------#
+UPLOAD_FOLDER = '/mnt/d/OUCRU-Handwriting-Recognition/static/uploads/'
+app = Flask(__name__)
+app.secret_key = "secret key"
+cors = CORS(app)
+app.config['CORS_HEADERS'] = 'Content-Type'
+app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
+app.config['MAX_CONTENT_LENGTH'] = 16 * 1024 * 1024
+ALLOWED_EXTENSIONS = set(['png', 'jpg', 'jpeg', 'gif'])
+
 #----------------------------Parse req. arguments------------------------------#
 ap = argparse.ArgumentParser()
 ap.add_argument("-i", "--input", type=str, default=constant.DEFAULT_PATH + constant.INPUT_SUFFIX,
@@ -26,7 +43,7 @@ ap.add_argument("-a", "--annotated", type=str, default=constant.DEFAULT_PATH + c
                 help="path to (optional) annotated output images file")
 ap.add_argument("-rt", "--retrain", type=str, default="False",
                 help="whether or not model should be retrained")
-ap.add_argument("-op", "--operation", type=str, default="Predict",
+ap.add_argument("-op", "--operation", type=str, default="Server",
                 help="Predict or Annotation")
 ap.add_argument("-is", "--isolated", type=str, default="None",
                 help="Isolated operation of module")
@@ -53,6 +70,77 @@ adaptive_output_path = output_path + constant.ADAPTIVE_FOLDER_SUFFIX
 tr_output_path = output_path + constant.TEXTRECOGNITION_FOLDER_SUFFIX
 
 
+#----------------------------Flask endpoints------------------------------#
+@app.route('/')
+@cross_origin()
+def hello_world():
+    print("hello world")
+    return {"hello": "world"}
+
+
+@app.route('/input', methods=['POST'])
+def upload_image():
+    if 'file' not in request.files:
+        flash('No file part')
+        return redirect(request.url)
+    file = request.files['file']
+    if file.filename == '':
+        flash('No image selected for uploading')
+        return redirect(request.url)
+    if file and allowed_file(file.filename):
+        filename = secure_filename(file.filename)
+        file.save(os.path.join(app.config['UPLOAD_FOLDER'], filename))
+        # print('upload_image filename: ' + filename)
+        flash('Image successfully uploaded and displayed below')
+        return render_template('upload.html', filename=filename)
+    else:
+        flash('Allowed image types are -> png, jpg, jpeg, gif')
+        return redirect(request.url)
+
+
+@app.route("/manual_adaptive", methods=['POST'])
+@cross_origin()
+def run_adaptive_preprocesscing_manual():
+    request_data = request.get_json()
+
+    file_name = request_data['file_name']
+
+    folder_name = file_name.split('_td_')[0]
+    split = file_name.split('-denoised')
+    split_name = split[0]
+    split_suffix = split[1]
+
+    path = os.path.join(td_output_path, folder_name, split_name + split_suffix)
+    apply_CLAHE = request_data["apply_CLAHE"]
+    window_size = request_data["window_size"]
+    denoise_size = request_data["denoise_size"]
+
+    applyAdaptivePreprocesscingManualStep(
+        path, adaptive_output_path, apply_CLAHE=apply_CLAHE, window_size=window_size, denoise_size=denoise_size)
+
+    return {
+        "file_name": path,
+        "apply_CLAHE": apply_CLAHE,
+        "window_size": window_size,
+        "denoise_size": denoise_size
+    }
+
+
+@ app.route('/display/<filename>')
+@ cross_origin()
+def display_image(filename):
+    # print('display_image filename: ' + filename)
+    return redirect(url_for('static', filename='Output/TextDetection/21.000440 (33)pdpd/' + filename), code=301)
+
+
+@ app.route('/directory_exist')
+@ cross_origin()
+def check_directory_exist():
+    path = request.args.get('path')
+    print(path)
+    return {path: os.path.exists(path)}
+
+
 def get_img_list_from_directoty(input):
     imgs_dir = [
         r"{}".format(input),
@@ -75,6 +163,7 @@ def get_img_list_from_directoty(input):
 
 
 if __name__ == '__main__':
+
     print("#----------------------------DOCR - OUCRU Handwriting Recognition - Main ------------------------------#")
     print("# " + operation)
     if operation == "Predict":
@@ -213,11 +302,11 @@ if __name__ == '__main__':
         if evaluation_img_path == "None":
             raise ValueError(
                 'Need Evaluation img path to be specified')
-    else:
-        exit
-
-    print("# Pipeline finished " + operation +
-          " with " + str(records_count) + " medical records")
+    elif operation == "Server":
+        app.run(host="0.0.0.0", port=5000, debug=True,
+                threaded=False, use_reloader=False)
+        # print("# Pipeline finished " + operation +
+        #       " with " + str(records_count) + " medical records")
 
 
 def PaperDetectionCaller(img, name):
