@@ -200,7 +200,7 @@ def applyAdaptivePreprocesscingManualStep(image_path, output_dir, apply_CLAHE, w
     # print(*images_name, sep='\n')
     SIZE = 15  # SIZE in range (10, 31); best range (10, 21)
     output_dir = Path(output_dir)
-    output_dir_denoised = output_dir / 'denoised-output'
+    output_dir_denoised = output_dir
 
     Path.mkdir(output_dir, exist_ok=True)
     Path.mkdir(output_dir_denoised, exist_ok=True)
@@ -215,8 +215,10 @@ def applyAdaptivePreprocesscingManualStep(image_path, output_dir, apply_CLAHE, w
     print('☒ Applied Adaptive PP: {:>25}\t---\tFFT Metric: {:8.3f} - Parameters = apply_CLAHE: {} window_size: {:8.3f} - denoised_size: {:8.3f}'.format(
         image_name, mean, apply_CLAHE, window_size, denoise_size))
 
-    image_denoise = denoise_manual(output_dir_denoised,
-                                   image_path, blur_degree=mean, apply_CLAHE=apply_CLAHE, window_size=window_size, denoised_size=denoise_size)
+    file_name = denoise_manual(output_dir_denoised,
+                               image_path, blur_degree=mean, apply_CLAHE=apply_CLAHE, window_size=window_size, denoised_size=denoise_size)
+
+    return file_name
 
     # print('DENOISED:')
     # scale = 1
@@ -230,6 +232,12 @@ def denoise_manual(output_dir_denoised, img_path, blur_degree, apply_CLAHE=True,
 
     img = cv2.imread(img_path)
     gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
+
+    # Split image name
+    image_name = Path(img_path).stem
+    preview_image_name = Path(img_path).stem
+    image_suffix = Path(img_path).suffix
+    original_name = image_name.split('pdpd')[0]
     # print('GRAY:')
     # cv2_imshow(gray)
     # =============================================================================
@@ -239,6 +247,7 @@ def denoise_manual(output_dir_denoised, img_path, blur_degree, apply_CLAHE=True,
         # clipLimit range (5:11)
         clahe = cv2.createCLAHE(clipLimit=5, tileGridSize=tile_size)
         clahe_image = clahe.apply(gray)
+        preview_image_name += "--amplified-CLAHE"
         # cv2.imwrite(output_dir + image_name[:-4] + '--amplified-CLAHE.png', clahe_image)
     else:
         clahe_image = gray
@@ -249,9 +258,6 @@ def denoise_manual(output_dir_denoised, img_path, blur_degree, apply_CLAHE=True,
     binary_sauvola = clahe_image > thresh_sauvola
     sauvola_image = np.uint8(binary_sauvola * 255)
 
-    # Split image name
-    image_name = Path(img_path).stem
-    image_suffix = Path(img_path).suffix
     # cv2.imwrite(str(output_dir_sauvola / image_name)+'-SauvolaWS='+str(window_size) + image_suffix, sauvola_image)
     # =============================================================================
     # INVERSE thresholding
@@ -261,8 +267,10 @@ def denoise_manual(output_dir_denoised, img_path, blur_degree, apply_CLAHE=True,
 
     img_denoised = remove_small_objects(sauvola_bin_image, denoised_size)
 
-    original_name = image_name.split('pdpd')[0]
+    preview_image_name += "--SauvolaWS=" + \
+        str(window_size)+"--DenoisedS="+str(denoised_size) + '-denoised-MANUAL'
 
+    preview_folder = "Adaptive-Preview"
     isExist = os.path.exists(
         str(output_dir_denoised) + "/" + original_name)
 
@@ -271,9 +279,10 @@ def denoise_manual(output_dir_denoised, img_path, blur_degree, apply_CLAHE=True,
         os.makedirs(str(output_dir_denoised) + "/" + original_name)
         print("The new directory is created for " + original_name)
 
-    print(str(output_dir_denoised) + "/" + original_name + "/" +
-          str(image_name) + '-denoised-MANUAL' + image_suffix)
-    cv2.imwrite(str(output_dir_denoised) + "/" + original_name + "/" +
-                str(image_name) + '-denoised-MANUAL' + image_suffix, img_denoised)
-
-    return img_denoised
+    write_path = str(output_dir_denoised) + "/" + original_name + \
+        "/" + str(image_name) + '-denoised' + image_suffix
+    preview_path = str(output_dir_denoised) + "/" + preview_folder + \
+        "/" + str(preview_image_name) + image_suffix
+    cv2.imwrite(write_path, img_denoised)
+    cv2.imwrite(preview_path, img_denoised)
+    return preview_image_name
