@@ -61,6 +61,18 @@ def get_input_list():
     return json_string
 
 
+@app.route('/get-static-folder/<directory>')
+@cross_origin()
+def display_output_folder(directory):
+
+    combined_path = static_path + "output" + "/" + directory
+    subfolders = [str(os.path.basename(os.path.normpath(f)))
+                  for f in os.scandir(combined_path) if f.is_dir()]
+    print(subfolders)
+    json_string = json.dumps(subfolders)
+    return json_string
+
+
 @app.route('/get-static-list/<directory>')
 @cross_origin()
 def display_output_list(directory):
