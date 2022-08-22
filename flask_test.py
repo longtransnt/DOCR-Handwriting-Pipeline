@@ -11,11 +11,11 @@ from werkzeug.utils import secure_filename
 import json
 import numpy as np
 from Misc import constant
-output_path = "/mnt/d/DOCR/OUCRU-Handwriting-Pipeline/static/output"
-input_path = "/mnt/d/DOCR/OUCRU-Handwriting-Pipeline/static/input/"
 static_path = "/mnt/d/DOCR/OUCRU-Handwriting-Pipeline/static/"
+output_path = static_path + "output"
+input_path = static_path + "input"
 
-UPLOAD_FOLDER = '/mnt/d/OUCRU-Handwriting-Pipeline/static/uploads/'
+UPLOAD_FOLDER = static_path + "uploads"
 app = Flask(__name__)
 app.secret_key = "secret key"
 cors = CORS(app)
@@ -23,11 +23,8 @@ app.config['CORS_HEADERS'] = 'Content-Type'
 app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
 app.config['MAX_CONTENT_LENGTH'] = 16 * 1024 * 1024
 ALLOWED_EXTENSIONS = set(['png', 'jpg', 'jpeg', 'gif'])
-
-
 td_output_path = output_path + constant.TEXTDETECTION_FOLDER_SUFFIX
 adaptive_output_path = output_path + constant.ADAPTIVE_FOLDER_SUFFIX
-
 
 def get_img_list_from_directoty(input):
     imgs_dir = [
@@ -95,11 +92,11 @@ def display_output_list_by_category(directory, category):
     return json_string
 
 
-@app.route('/display-input')
+@app.route('/display-input/<name>')
 @cross_origin()
-def display_input_image(path, filename):
+def display_input_image(name):
     # print('display_image filename: ' + filename)
-    return redirect(url_for('static', filename='input/' + filename), code=301)
+    return redirect(url_for('static', filename='input/' + name), code=301)
 
 
 @app.route('/display-output/<directory>/<filename>')
