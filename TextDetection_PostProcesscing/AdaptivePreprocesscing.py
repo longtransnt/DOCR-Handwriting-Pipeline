@@ -195,7 +195,7 @@ def applyAdaptivePreprocesscingStep(image_path, output_dir):
     # cv2_imshow(cv2.resize(image_denoise, (0, 0), fx=scale, fy=scale))
 
 
-def applyAdaptivePreprocesscingManualStep(image_path, output_dir, apply_CLAHE, window_size, denoise_size):
+def applyAdaptivePreprocesscingManualStep(image_path, output_dir, apply_CLAHE, window_size, denoise_size, clip_limit):
     image_path = image_path.strip()
     # print(*images_name, sep='\n')
     SIZE = 15  # SIZE in range (10, 31); best range (10, 21)
@@ -216,7 +216,7 @@ def applyAdaptivePreprocesscingManualStep(image_path, output_dir, apply_CLAHE, w
         image_name, mean, apply_CLAHE, window_size, denoise_size))
 
     file_name = denoise_manual(output_dir_denoised,
-                               image_path, blur_degree=mean, apply_CLAHE=apply_CLAHE, window_size=window_size, denoised_size=denoise_size)
+                               image_path, blur_degree=mean, apply_CLAHE=apply_CLAHE, window_size=window_size, denoised_size=denoise_size, clip_limit=clip_limit)
 
     return file_name
 
@@ -225,7 +225,7 @@ def applyAdaptivePreprocesscingManualStep(image_path, output_dir, apply_CLAHE, w
     # cv2_imshow(cv2.resize(image_denoise, (0, 0), fx=scale, fy=scale))
 
 
-def denoise_manual(output_dir_denoised, img_path, blur_degree, apply_CLAHE=True, tile_size=(8, 8), scale=1, window_size=51, denoised_size=12):
+def denoise_manual(output_dir_denoised, img_path, blur_degree, apply_CLAHE=True, tile_size=(8, 8), scale=1, window_size=51, denoised_size=12, clip_limit=5):
     # =============================================================================
     # Read input image
     # =============================================================================
@@ -245,7 +245,7 @@ def denoise_manual(output_dir_denoised, img_path, blur_degree, apply_CLAHE=True,
     # =============================================================================
     if apply_CLAHE:
         # clipLimit range (5:11)
-        clahe = cv2.createCLAHE(clipLimit=5, tileGridSize=tile_size)
+        clahe = cv2.createCLAHE(clipLimit=clip_limit, tileGridSize=tile_size)
         clahe_image = clahe.apply(gray)
         preview_image_name += "--amplified-CLAHE"
         # cv2.imwrite(output_dir + image_name[:-4] + '--amplified-CLAHE.png', clahe_image)
