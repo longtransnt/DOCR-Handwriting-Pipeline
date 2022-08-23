@@ -26,6 +26,7 @@ ALLOWED_EXTENSIONS = set(['png', 'jpg', 'jpeg', 'gif'])
 td_output_path = output_path + constant.TEXTDETECTION_FOLDER_SUFFIX
 adaptive_output_path = output_path + constant.ADAPTIVE_FOLDER_SUFFIX
 
+
 def get_img_list_from_directoty(input):
     imgs_dir = [
         r"{}".format(input),
@@ -128,9 +129,10 @@ def run_adaptive_preprocesscing_manual():
     apply_CLAHE = request_data["apply_CLAHE"]
     window_size = request_data["window_size"]
     denoise_size = request_data["denoise_size"]
+    clip_limit = request_data["clip_limit"]
 
     preview_file_name = applyAdaptivePreprocesscingManualStep(
-        path, adaptive_output_path, apply_CLAHE=apply_CLAHE, window_size=window_size, denoise_size=denoise_size)
+        path, adaptive_output_path, apply_CLAHE=apply_CLAHE, window_size=window_size, denoise_size=denoise_size, clip_limit=clip_limit)
 
     return {
         "file_name": preview_file_name,
