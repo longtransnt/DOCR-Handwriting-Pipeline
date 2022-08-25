@@ -13,11 +13,12 @@ import numpy as np
 from Misc import constant
 from TextRecognition.vietocr.vietocr.tool.utils import compute_accuracy
 
-static_path = "/mnt/d/DOCR/OUCRU-Handwriting-Pipeline/static/"
-output_path = static_path + "output"
-input_path = static_path + "input"
+output_path = constant.DEFAULT_PATH + constant.OUTPUT_SUFFIX
+input_path = constant.DEFAULT_PATH + constant.INPUT_SUFFIX
+static_path =  constant.DEFAULT_PATH + constant.STATIC_SUFFIX
 
 UPLOAD_FOLDER = static_path + "uploads"
+
 app = Flask(__name__)
 app.secret_key = "secret key"
 cors = CORS(app)
@@ -27,7 +28,6 @@ app.config['MAX_CONTENT_LENGTH'] = 16 * 1024 * 1024
 ALLOWED_EXTENSIONS = set(['png', 'jpg', 'jpeg', 'gif'])
 td_output_path = output_path + constant.TEXTDETECTION_FOLDER_SUFFIX
 adaptive_output_path = output_path + constant.ADAPTIVE_FOLDER_SUFFIX
-
 
 def get_img_list_from_directoty(input):
     imgs_dir = [
@@ -94,6 +94,15 @@ def display_output_list_by_category(directory, category):
     json_string = json.dumps(filenames)
     return json_string
 
+@app.route('/get-static-denoised-list/<directory>/<category>')
+@cross_origin()
+def display_output_list_denoised(directory, category):
+    combined_path = static_path + "output" + "/" + directory + "/denoised-output/" + category
+    print(combined_path)
+    img_list = get_img_list_from_directoty(combined_path)
+    filenames = [str(Path(x).stem) for x in img_list]
+    json_string = json.dumps(filenames)
+    return json_string
 
 @app.route('/display-input/<name>')
 @cross_origin()
@@ -113,6 +122,11 @@ def display_ouptput_image(directory, filename):
 @cross_origin()
 def display_uncategorized_image(directory, category, filename):
     return redirect(url_for('static', filename='output/' + directory + '/' + category + '/' + filename), code=301)
+
+@app.route('/display-adpt-denoised-output/<directory>/<category>/<filename>')
+@cross_origin()
+def display_adaptive_image(directory, category, filename):
+    return redirect(url_for('static', filename='output/' + directory + '/denoised-output/' + category + '/' + filename), code=301)
 
 
 @app.route("/manual_adaptive", methods=['POST'])

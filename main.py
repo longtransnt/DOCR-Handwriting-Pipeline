@@ -68,15 +68,13 @@ td_output_path = output_path + constant.TEXTDETECTION_FOLDER_SUFFIX
 td_annotated_output_path = annotated_output_path
 adaptive_output_path = output_path + constant.ADAPTIVE_FOLDER_SUFFIX
 tr_output_path = output_path + constant.TEXTRECOGNITION_FOLDER_SUFFIX
-
-
+static_path =  constant.DEFAULT_PATH + constant.STATIC_SUFFIX
 #----------------------------Flask endpoints------------------------------#
 @app.route('/')
 @cross_origin()
 def hello_world():
     print("hello world")
     return {"hello": "world"}
-
 
 @app.route('/input', methods=['POST'])
 def upload_image():
@@ -96,7 +94,6 @@ def upload_image():
     else:
         flash('Allowed image types are -> png, jpg, jpeg, gif')
         return redirect(request.url)
-
 
 @app.route("/manual_adaptive", methods=['POST'])
 @cross_origin()
@@ -125,21 +122,12 @@ def run_adaptive_preprocesscing_manual():
         "denoise_size": denoise_size
     }
 
-
-@ app.route('/display/<filename>')
-@ cross_origin()
-def display_image(filename):
-    # print('display_image filename: ' + filename)
-    return redirect(url_for('static', filename='Output/TextDetection/21.000440 (33)pdpd/' + filename), code=301)
-
-
 @ app.route('/directory_exist')
 @ cross_origin()
 def check_directory_exist():
     path = request.args.get('path')
     print(path)
     return {path: os.path.exists(path)}
-
 
 def get_img_list_from_directoty(input):
     imgs_dir = [
@@ -160,6 +148,166 @@ def get_img_list_from_directoty(input):
         elif isinstance(img, np.ndarray):
             img_list += [img]
     return img_list
+
+@ app.route('/input_to_adaptive/<filename>')
+@ cross_origin()
+def run_pipeline_to_adaptive(filename):
+    maskRCNN = PaperDetection.MaskCRNN(
+            output_path=pd_output_path, annotated_output_path=pd_annotated_output_path)
+    if(maskRCNN):
+        print(" ✔ Paper Detection  -   MaskRCNN model loaded")
+    else:
+        raise ValueError(
+            '❌ Paper Detection - MaskRCNN model failed to load')
+
+    fastRCNN = TextDetection_Detectron2.FasterRCNN(
+        output_path=td_output_path, annotated_output_path=td_output_path)
+    if(fastRCNN):
+        print(" ✔ Text Detection   -   FastRCNN model loaded")
+    else:
+        raise ValueError(
+            '❌ Text Detection - FastRCNN model failed to load')
+
+    vgg19_transformer = TextRecognition()
+    if(vgg19_transformer):
+        print(" ✔ Text Recognition   -   VGG19-Transormer model loaded")
+    else:
+        raise ValueError(
+            '❌ Text Detection - VGG19-Transormer model failed to load')
+
+    records_count = 0
+    # # =============================================================================
+    # # Paper Detection and Preprocesscing
+    # # =============================================================================
+    img = input_path + "/" + filename + ".jpg"
+    name = filename
+    print(img)
+    print(name)
+    im = cv2.imread(img)
+
+    # Encode the image as Base64
+    with open(img, "rb") as img_file:
+        data = base64.b64encode(img_file.read())
+
+        # Paper Detection
+        cropped_img, image_name = maskRCNN.predict(
+            im=im, name=name, data=data)
+        if(image_name is not None):
+
+            # Preprocesscing
+            processed_img, processed_img_path = Amp.applyPreprocesscingStep(
+                image_name=image_name, output_dir=pp_output_path)
+            print('─' * 100)
+            print("Preprocessing Image: " + processed_img_path)
+# #     # ======================================================================================
+# #     # Text Detection
+# #     # ======================================================================================
+            text_detection_folder = fastRCNN.predict(original=cropped_img,
+                                                        name=processed_img_path, data=data)
+            print("Text Detection Finished - Result exported in : ",
+                    text_detection_folder)
+
+            cropped_img_list = get_img_list_from_directoty(
+                text_detection_folder)
+            cropped_filenames = [str(Path(x).stem)
+                                    for x in cropped_img_list]
+
+            for cropped_img, cropped_filename in zip(cropped_img_list, cropped_filenames):
+                if(cropped_img.endswith(".csv") or cropped_img.endswith(".json") or "visualize" in cropped_img):
+                    continue
+                applyAdaptivePreprocesscingStep(
+                    cropped_img, adaptive_output_path)
+            print('─' * 100)
+            # td.operation(input_path = td_input)
+            records_count += 1
+        else:
+            print("Null found at: ", image_name)
+        img_list = get_img_list_from_directoty(input_path)
+    return "Completed running Pipeline for selected image"
+
+@app.route('/')
+@app.route('/get-input-list')
+@cross_origin()
+def get_input_list():
+    combined_path = static_path + "input"
+    img_list = get_img_list_from_directoty(combined_path)
+    filenames = [str(Path(x).stem) for x in img_list]
+    json_string = json.dumps(filenames)
+    return json_string
+
+
+@app.route('/get-static-folder/<directory>')
+@cross_origin()
+def display_output_folder(directory):
+
+    combined_path = static_path + "output" + "/" + directory
+    subfolders = [str(os.path.basename(os.path.normpath(f)))
+                  for f in os.scandir(combined_path) if f.is_dir()]
+    print(subfolders)
+    json_string = json.dumps(subfolders)
+    return json_string
+
+
+@app.route('/get-static-list/<directory>')
+@cross_origin()
+def display_output_list(directory):
+    combined_path = static_path + "output" + "/" + directory
+    img_list = get_img_list_from_directoty(combined_path)
+    filenames = [str(Path(x).stem) for x in img_list]
+    print(filenames)
+    json_string = json.dumps(filenames)
+    return json_string
+
+
+@app.route('/get-static-list/<directory>/<category>')
+@cross_origin()
+def display_output_list_by_category(directory, category):
+    combined_path = static_path + "output" + "/" + directory + "/" + category
+    print(combined_path)
+    img_list = get_img_list_from_directoty(combined_path)
+    filenames = [str(Path(x).stem) for x in img_list]
+    json_string = json.dumps(filenames)
+    return json_string
+
+
+@app.route('/display-input/<name>')
+@cross_origin()
+def display_input_image(name):
+    # print('display_image filename: ' + filename)
+    return redirect(url_for('static', filename='input/' + name), code=301)
+
+@app.route('/display-adpt-denoised-output/<directory>/<category>/<filename>')
+@cross_origin()
+def display_adaptive_image(directory, category, filename):
+    return redirect(url_for('static', filename='output/' + directory + '/denoised-output/' + category + '/' + filename), code=301)
+
+@app.route('/display-output/<directory>/<filename>')
+@cross_origin()
+def display_ouptput_image(directory, filename):
+    # print('display_image filename: ' + filename)
+    return redirect(url_for('static', filename='output/' + directory + '/' + filename), code=301)
+
+@app.route('/get-static-denoised-list/<directory>/<category>')
+@cross_origin()
+def display_output_list_denoised(directory, category):
+    combined_path = static_path + "output" + "/" + directory + "/denoised-output/" + category
+    print(combined_path)
+    img_list = get_img_list_from_directoty(combined_path)
+    filenames = [str(Path(x).stem) for x in img_list]
+    json_string = json.dumps(filenames)
+    return json_string
+
+@app.route('/display-sub-output/<directory>/<category>/<filename>')
+@cross_origin()
+def display_uncategorized_image(directory, category, filename):
+    return redirect(url_for('static', filename='output/' + directory + '/' + category + '/' + filename), code=301)
+
+def getImageUrl(path, name, category):
+    if (category is None):
+        url = "http://localhost:5000/display-output/${path}/${name}.jpg"
+    else:
+        url = "http://localhost:5000/display-sub-output/${path}/${category}/${name}.jpg"
+    return url
 
 
 if __name__ == '__main__':
@@ -303,8 +451,8 @@ if __name__ == '__main__':
             raise ValueError(
                 'Need Evaluation img path to be specified')
     elif operation == "Server":
-        app.run(host="0.0.0.0", port=5000, debug=True,
-                threaded=False, use_reloader=False)
+        app.run(host="0.0.0.0", port=5000, debug=False,
+                threaded=True, use_reloader=False)
         # print("# Pipeline finished " + operation +
         #       " with " + str(records_count) + " medical records")
 
