@@ -337,7 +337,7 @@ if __name__ == '__main__':
             print(" ✔ Text Recognition   -   VGG19-Transormer model loaded")
         else:
             raise ValueError(
-                '❌ Text Detection - VGG19-Transormer model failed to load')
+                '❌ Text Recognition - VGG19-Transormer model failed to load')
 
         records_count = 0
         img_list = get_img_list_from_directoty(input_path)
@@ -365,27 +365,27 @@ if __name__ == '__main__':
         # #     # ======================================================================================
         # #     # Text Detection
         # #     # ======================================================================================
-                    text_detection_folder = fastRCNN.predict(original=cropped_img,
-                                                             name=processed_img_path, data=data)
-                    print("Text Detection Finished - Result exported in : ",
-                          text_detection_folder)
+            text_detection_folder = fastRCNN.predict(original=cropped_img,
+                                                     name=processed_img_path, data=data)
+            print("Text Detection Finished - Result exported in : ",
+                  text_detection_folder)
 
-                    cropped_img_list = get_img_list_from_directoty(
-                        text_detection_folder)
-                    cropped_filenames = [str(Path(x).stem)
-                                         for x in cropped_img_list]
+            cropped_img_list = get_img_list_from_directoty(
+                text_detection_folder)
+            cropped_filenames = [str(Path(x).stem)
+                                 for x in cropped_img_list]
 
-                    for cropped_img, cropped_filename in zip(cropped_img_list, cropped_filenames):
-                        if(cropped_img.endswith(".csv") or cropped_img.endswith(".json") or "visualize" in cropped_img):
-                            continue
-                        applyAdaptivePreprocesscingStep(
-                            cropped_img, adaptive_output_path)
-                    print('─' * 100)
-                    # td.operation(input_path = td_input)
-                    records_count += 1
-                else:
-                    print("Null found at: ", image_name)
-                img_list = get_img_list_from_directoty(input_path)
+            for cropped_img, cropped_filename in zip(cropped_img_list, cropped_filenames):
+                if(cropped_img.endswith(".csv") or cropped_img.endswith(".json") or "visualize" in cropped_img):
+                    continue
+                applyAdaptivePreprocesscingStep(
+                    cropped_img, adaptive_output_path)
+            print('─' * 100)
+            # td.operation(input_path = td_input)
+            records_count += 1
+        else:
+            print("Null found at: ", image_name)
+        img_list = get_img_list_from_directoty(input_path)
 
         # ======================================================================================
         # Text Recognition
@@ -435,9 +435,9 @@ if __name__ == '__main__':
                 print(en)
                 print(en.decode("utf8"))
 
-                cor_dict[0]["ground_truth"] = str(correction.encode("utf8"))
+                cor_dict[0]["ground_truth"] = en.decode("utf8")
 
-                text_recognition_json_result.append(cor_dict)
+                text_recognition_json_result.append(cor_dict[0])
 
             base = Path(tr_output_path)
             jsonpath = base / (name + ".json")

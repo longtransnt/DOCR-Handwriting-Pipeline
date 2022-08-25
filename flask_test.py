@@ -10,10 +10,15 @@ from TextDetection_PostProcesscing.AdaptivePreprocesscing import applyAdaptivePr
 from werkzeug.utils import secure_filename
 import json
 import numpy as np
+from Misc import constant
+from TextRecognition.vietocr.vietocr.tool.utils import compute_accuracy
+
 output_path = constant.DEFAULT_PATH + constant.OUTPUT_SUFFIX
 input_path = constant.DEFAULT_PATH + constant.INPUT_SUFFIX
 static_path =  constant.DEFAULT_PATH + constant.STATIC_SUFFIX
+
 UPLOAD_FOLDER = static_path + "uploads"
+
 app = Flask(__name__)
 app.secret_key = "secret key"
 cors = CORS(app)
@@ -147,6 +152,29 @@ def run_adaptive_preprocesscing_manual():
 
     return {
         "file_name": preview_file_name,
+    }
+
+
+@app.route("/text_recognition_eval", methods=['POST'])
+@cross_origin()
+def text_recognition_evaluation():
+    cer = 1
+    wer = 1
+
+    request_data = request.get_json()
+
+    ground_truths = request_data["ground_truths"]
+    ground_truths = [s.lower() for s in ground_truths]
+
+    predicts = request_data["predicts"]
+    predicts = [s.lower() for s in predicts]
+
+    cer = compute_accuracy(ground_truths, predicts, "cer")
+    wer = compute_accuracy(ground_truths, predicts, "per_word")
+
+    return {
+        "wer": wer,
+        "cer": cer
     }
 
 
