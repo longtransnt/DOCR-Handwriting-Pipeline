@@ -171,7 +171,7 @@ def applyAdaptivePreprocesscingStep(image_path, output_dir):
     # print(*images_name, sep='\n')
     SIZE = 15  # SIZE in range (10, 31); best range (10, 21)
     output_dir = Path(output_dir)
-    output_dir_denoised = output_dir / 'denoised-output'
+    output_dir_denoised = output_dir
 
     Path.mkdir(output_dir, exist_ok=True)
     Path.mkdir(output_dir_denoised, exist_ok=True)
@@ -189,6 +189,7 @@ def applyAdaptivePreprocesscingStep(image_path, output_dir):
     # for tileGridSize in range():
     image_denoise = denoise(output_dir_denoised,
                             image_path, blur_degree=mean, vis=False)
+    return image_name, mean
 
     # print('DENOISED:')
     # scale = 1
@@ -218,7 +219,7 @@ def applyAdaptivePreprocesscingManualStep(image_path, output_dir, apply_CLAHE, w
     file_name = denoise_manual(output_dir_denoised,
                                image_path, blur_degree=mean, apply_CLAHE=apply_CLAHE, window_size=window_size, denoised_size=denoise_size, clip_limit=clip_limit)
 
-    return file_name
+    return file_name, mean
 
     # print('DENOISED:')
     # scale = 1

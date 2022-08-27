@@ -79,9 +79,18 @@ class FasterRCNN(object):
                        )
         v = v.draw_instance_predictions(outputs["instances"].to("cpu"))
 
+        o = Visualizer(td_input_img[:, :, ::-1],
+                       scale=1, instance_mode=ColorMode.IMAGE)
+
+        o = o.draw_instance_predictions(outputs["instances"].to("cpu"))
+
         visualize_path = self.output_path + "/" + \
-            original_bare_file_name + "/" + "visualize.jpg"
-        cv2.imwrite(visualize_path, v.get_image()[:, :, ::-1])
+            original_bare_file_name
+        cv2.imwrite(visualize_path + "/" + "visualize.jpg",
+                    v.get_image()[:, :, ::-1])
+
+        cv2.imwrite(visualize_path + "/" + "visualize-normal.jpg",
+                    o.get_image()[:, :, ::-1])
 
         pred_boxes_list = outputs["instances"].pred_boxes.tensor.cpu().numpy()
 

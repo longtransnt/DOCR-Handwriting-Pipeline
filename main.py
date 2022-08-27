@@ -68,13 +68,16 @@ td_output_path = output_path + constant.TEXTDETECTION_FOLDER_SUFFIX
 td_annotated_output_path = annotated_output_path
 adaptive_output_path = output_path + constant.ADAPTIVE_FOLDER_SUFFIX
 tr_output_path = output_path + constant.TEXTRECOGNITION_FOLDER_SUFFIX
-static_path =  constant.DEFAULT_PATH + constant.STATIC_SUFFIX
+static_path = constant.DEFAULT_PATH + constant.STATIC_SUFFIX
 #----------------------------Flask endpoints------------------------------#
+
+
 @app.route('/')
 @cross_origin()
 def hello_world():
     print("hello world")
     return {"hello": "world"}
+
 
 @app.route('/input', methods=['POST'])
 def upload_image():
@@ -95,6 +98,7 @@ def upload_image():
         flash('Allowed image types are -> png, jpg, jpeg, gif')
         return redirect(request.url)
 
+
 @app.route("/manual_adaptive", methods=['POST'])
 @cross_origin()
 def run_adaptive_preprocesscing_manual():
@@ -111,16 +115,28 @@ def run_adaptive_preprocesscing_manual():
     apply_CLAHE = request_data["apply_CLAHE"]
     window_size = request_data["window_size"]
     denoise_size = request_data["denoise_size"]
+    clip_limit = request_data["clip_limit"]
 
-    applyAdaptivePreprocesscingManualStep(
-        path, adaptive_output_path, apply_CLAHE=apply_CLAHE, window_size=window_size, denoise_size=denoise_size)
+    preview_file_name, blur = applyAdaptivePreprocesscingManualStep(
+        path, adaptive_output_path, apply_CLAHE=apply_CLAHE, window_size=window_size, denoise_size=denoise_size, clip_limit=clip_limit)
 
     return {
-        "file_name": path,
-        "apply_CLAHE": apply_CLAHE,
-        "window_size": window_size,
-        "denoise_size": denoise_size
+        "file_name": preview_file_name,
     }
+
+
+@app.route("/get_blur/<file_name>")
+@cross_origin()
+def get_blur(file_name):
+    # Opening JSON file
+    json_file = open(adaptive_output_path + "/" + file_name + "/blur.json")
+
+    #     # returns JSON object as
+    #     # a dictionary
+    json_file_data = json.load(json_file)
+
+    return json_file_data
+
 
 @ app.route('/directory_exist')
 @ cross_origin()
@@ -128,6 +144,7 @@ def check_directory_exist():
     path = request.args.get('path')
     print(path)
     return {path: os.path.exists(path)}
+
 
 def get_img_list_from_directoty(input):
     imgs_dir = [
@@ -149,11 +166,12 @@ def get_img_list_from_directoty(input):
             img_list += [img]
     return img_list
 
+
 @ app.route('/input_to_adaptive/<filename>')
 @ cross_origin()
 def run_pipeline_to_adaptive(filename):
     maskRCNN = PaperDetection.MaskCRNN(
-            output_path=pd_output_path, annotated_output_path=pd_annotated_output_path)
+        output_path=pd_output_path, annotated_output_path=pd_annotated_output_path)
     if(maskRCNN):
         print(" ✔ Paper Detection  -   MaskRCNN model loaded")
     else:
@@ -167,13 +185,6 @@ def run_pipeline_to_adaptive(filename):
     else:
         raise ValueError(
             '❌ Text Detection - FastRCNN model failed to load')
-
-    vgg19_transformer = TextRecognition()
-    if(vgg19_transformer):
-        print(" ✔ Text Recognition   -   VGG19-Transormer model loaded")
-    else:
-        raise ValueError(
-            '❌ Text Detection - VGG19-Transormer model failed to load')
 
     records_count = 0
     # # =============================================================================
@@ -203,14 +214,14 @@ def run_pipeline_to_adaptive(filename):
 # #     # Text Detection
 # #     # ======================================================================================
             text_detection_folder = fastRCNN.predict(original=cropped_img,
-                                                        name=processed_img_path, data=data)
+                                                     name=processed_img_path, data=data)
             print("Text Detection Finished - Result exported in : ",
-                    text_detection_folder)
+                  text_detection_folder)
 
             cropped_img_list = get_img_list_from_directoty(
                 text_detection_folder)
             cropped_filenames = [str(Path(x).stem)
-                                    for x in cropped_img_list]
+                                 for x in cropped_img_list]
 
             for cropped_img, cropped_filename in zip(cropped_img_list, cropped_filenames):
                 if(cropped_img.endswith(".csv") or cropped_img.endswith(".json") or "visualize" in cropped_img):
@@ -223,7 +234,14 @@ def run_pipeline_to_adaptive(filename):
         else:
             print("Null found at: ", image_name)
         img_list = get_img_list_from_directoty(input_path)
-    return "Completed running Pipeline for selected image"
+    return "Completed running Paper Detection - Processcing - Text Detection - Adaptive for selected image"
+
+
+@app.route('/text_recognition/<filename>')
+@cross_origin()
+def run_text_recognition(filename):
+    return {"is": True}
+
 
 @app.route('/')
 @app.route('/get-input-list')
@@ -276,10 +294,12 @@ def display_input_image(name):
     # print('display_image filename: ' + filename)
     return redirect(url_for('static', filename='input/' + name), code=301)
 
+
 @app.route('/display-adpt-denoised-output/<directory>/<category>/<filename>')
 @cross_origin()
 def display_adaptive_image(directory, category, filename):
     return redirect(url_for('static', filename='output/' + directory + '/denoised-output/' + category + '/' + filename), code=301)
+
 
 @app.route('/display-output/<directory>/<filename>')
 @cross_origin()
@@ -287,20 +307,24 @@ def display_ouptput_image(directory, filename):
     # print('display_image filename: ' + filename)
     return redirect(url_for('static', filename='output/' + directory + '/' + filename), code=301)
 
+
 @app.route('/get-static-denoised-list/<directory>/<category>')
 @cross_origin()
 def display_output_list_denoised(directory, category):
-    combined_path = static_path + "output" + "/" + directory + "/denoised-output/" + category
+    combined_path = static_path + "output" + "/" + \
+        directory + "/denoised-output/" + category
     print(combined_path)
     img_list = get_img_list_from_directoty(combined_path)
     filenames = [str(Path(x).stem) for x in img_list]
     json_string = json.dumps(filenames)
     return json_string
 
+
 @app.route('/display-sub-output/<directory>/<category>/<filename>')
 @cross_origin()
 def display_uncategorized_image(directory, category, filename):
     return redirect(url_for('static', filename='output/' + directory + '/' + category + '/' + filename), code=301)
+
 
 def getImageUrl(path, name, category):
     if (category is None):
@@ -345,6 +369,7 @@ if __name__ == '__main__':
         # # =============================================================================
         # # Paper Detection and Preprocesscing
         # # =============================================================================
+
         for img, name in zip(img_list, filenames):
             im = cv2.imread(img)
 
@@ -365,6 +390,7 @@ if __name__ == '__main__':
         # #     # ======================================================================================
         # #     # Text Detection
         # #     # ======================================================================================
+
             text_detection_folder = fastRCNN.predict(original=cropped_img,
                                                      name=processed_img_path, data=data)
             print("Text Detection Finished - Result exported in : ",
@@ -375,11 +401,22 @@ if __name__ == '__main__':
             cropped_filenames = [str(Path(x).stem)
                                  for x in cropped_img_list]
 
+            adaptive_blur_collumns = ['image_name', 'blur']
+            adaptive_bur_file = pd.DataFrame(columns=adaptive_blur_collumns)
+
             for cropped_img, cropped_filename in zip(cropped_img_list, cropped_filenames):
                 if(cropped_img.endswith(".csv") or cropped_img.endswith(".json") or "visualize" in cropped_img):
                     continue
-                applyAdaptivePreprocesscingStep(
+                file_name, mean = applyAdaptivePreprocesscingStep(
                     cropped_img, adaptive_output_path)
+
+                adaptive_row = pd.DataFrame(
+                    [file_name, mean], index=adaptive_blur_collumns).T
+                adaptive_bur_file = pd.concat([adaptive_bur_file,
+                                               adaptive_row])
+
+            adaptive_bur_file.to_json(
+                orient="records", path_or_buf=adaptive_output_path + "/" + file_name.split("pdpd")[0] + "/" + 'blur.json')
             print('─' * 100)
             # td.operation(input_path = td_input)
             records_count += 1
@@ -455,43 +492,3 @@ if __name__ == '__main__':
                 threaded=True, use_reloader=False)
         # print("# Pipeline finished " + operation +
         #       " with " + str(records_count) + " medical records")
-
-
-def PaperDetectionCaller(img, name):
-    maskRCNN = PaperDetection.MaskCRNN(
-        output_path=pd_output_path, annotated_output_path=pd_annotated_output_path)
-
-    if(maskRCNN):
-        print(" ✔ Paper Detection  -   MaskRCNN model loaded")
-    else:
-        raise ValueError(
-            ' ❌ Paper Detection    -   MaskRCNN model failed to load')
-
-    cropped_img, image_name = maskRCNN.predict(im=img, name=name)
-    return cropped_img
-
-
-def PreprocessingCaller(img_path):
-    processed_img, processed_img_path = Amp.applyPreprocesscingStep(
-        image_name=img_path, output_dir=pp_output_path)
-    return processed_img
-
-
-def TextDetectionCaller(img, name):
-    fastRCNN = TextDetection_Detectron2.FasterRCNN(
-        output_path=td_output_path, annotated_output_path=td_output_path)
-
-    if(fastRCNN):
-        print(" ✔ Text Detection   -   FastRCNN model loaded")
-    else:
-        raise ValueError(
-            '   ❌ Text Detection   -   FastRCNN model failed to load')
-
-    # TODO: edit to Return records with bounding box
-    text_detection_folder = fastRCNN.predict(original=cropped_img,
-                                             name=processed_img_path, data=data)
-    return text_detection_folder
-
-
-def AdaptivePreprocesscingCaller():
-    return "Not implemented yet"
