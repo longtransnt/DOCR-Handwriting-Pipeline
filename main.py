@@ -68,6 +68,7 @@ td_output_path = output_path + constant.TEXTDETECTION_FOLDER_SUFFIX
 td_annotated_output_path = annotated_output_path
 adaptive_output_path = output_path + constant.ADAPTIVE_FOLDER_SUFFIX
 tr_output_path = output_path + constant.TEXTRECOGNITION_FOLDER_SUFFIX
+eval_output_path = output_path + constant.EVAL_FOLDER_SUFFIX
 static_path = constant.DEFAULT_PATH + constant.STATIC_SUFFIX
 #----------------------------Flask endpoints------------------------------#
 
@@ -237,10 +238,28 @@ def run_pipeline_to_adaptive(filename):
     return "Completed running Paper Detection - Processcing - Text Detection - Adaptive for selected image"
 
 
-@app.route('/text_recognition/<filename>')
+@app.route('/run_text_recognition/<filename>')
 @cross_origin()
 def run_text_recognition(filename):
-    return {"is": True}
+    predict_path = tr_output_path + "/" + filename + "_tr.json"
+    eval_path = eval_output_path + "/" + filename + "_eval.json"
+
+    is_predict_exist = os.path.exists(predict_path)
+    is_eval_exist = os.path.exists(eval_path)
+
+    if (is_predict_exist):
+        return {"predict_exist": is_predict_exist,
+                "eval_exist": is_eval_exist}
+
+    vgg19_transformer = TextRecognition()
+
+    if(vgg19_transformer):
+        print(" ✔ Text Recognition   -   VGG19-Transormer model loaded")
+    else:
+        raise ValueError(
+            '❌ Text Recognition - VGG19-Transormer model failed to load')
+
+    return {"exist": False}
 
 
 @app.route('/')
