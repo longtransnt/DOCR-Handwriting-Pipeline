@@ -6,6 +6,7 @@ from Preprocessing import AmplifyClaheDeblureSauvolaDenoiseConnCompo as Amp
 from TextDetection import TextDetection_Detectron2
 from TextDetection_PostProcesscing.AdaptivePreprocesscing import applyAdaptivePreprocesscingStep, applyAdaptivePreprocesscingManualStep, denoise
 from TextRecognition.vietocr.TextRecognition import TextRecognition
+from TextRecognition.vietocr.vietocr.tool.utils import compute_accuracy
 import sys
 import base64
 import json
@@ -259,7 +260,68 @@ def run_text_recognition(filename):
         raise ValueError(
             '❌ Text Recognition - VGG19-Transormer model failed to load')
 
+    adaptive_directory = adaptive_output_path + "/" + filename
+    tr_img_list = get_img_list_from_directoty(adaptive_directory)
+    tr_filenames = [str(Path(x).stem) for x in tr_img_list]
+
+    dashed_line = '=' * 100
+    head = f'{"filename":35s}\t' \
+        f'{"predicted_string (non-bigram)":35s}\t' \
+        f'{"predicted_string (bigram)":35s}'
+
+    text_recognition_csv_headers = [
+        'filename', 'predicted_string (non-correction)', 'predicted_string (correction)']
+    text_recognition_csv = pd.DataFrame(
+        columns=text_recognition_csv_headers)
+
+    print(f'{dashed_line}\n{head}\n{dashed_line}')
+    for img, name in zip(tr_img_list, tr_filenames):
+        split = name.split('-denoised')
+        split_name = split[0]
+        split_suffix = split[1]
+        cor_dict = list(
+            filter(lambda line: line['image_name'].split('.jpg')[0] == split_name, json_file_data))
+
+        prediction, correction = vgg19_transformer.infer(img)
+        row_output = f'{name:20s}\t{prediction:35s}' \
+            f'\t{correction:35s}'
+        print(row_output)
+        en = correction.encode("utf8")
+        print(en)
+        print(en.decode("utf8"))
+
+        cor_dict[0]["ground_truth"] = en.decode("utf8")
+
+        text_recognition_json_result.append(cor_dict[0])
+
+    base = Path(tr_output_path)
+    jsonpath = base / (name + ".json")
+    jsonpath.write_text(json.dumps(text_recognition_json_result))
+
     return {"exist": False}
+
+
+@app.route("/text_recognition_eval", methods=['POST'])
+@cross_origin()
+def text_recognition_evaluation():
+    cer = 1
+    wer = 1
+
+    request_data = request.get_json()
+
+    ground_truths = request_data["ground_truths"]
+    ground_truths = [s.lower() for s in ground_truths]
+
+    predicts = request_data["predicts"]
+    predicts = [s.lower() for s in predicts]
+
+    cer = compute_accuracy(ground_truths, predicts, "cer")
+    wer = compute_accuracy(ground_truths, predicts, "per_word")
+
+    return {
+        "wer": wer,
+        "cer": cer
+    }
 
 
 @app.route('/')
