@@ -127,6 +127,27 @@ def run_adaptive_preprocesscing_manual():
     }
 
 
+@app.route("/automatic_adaptive", methods=['POST'])
+@cross_origin()
+def run_adaptive_preprocesscing_automatic():
+    request_data = request.get_json()
+    file_names = request_data['file_names']
+
+    for file_name in file_names:
+        folder_name = file_name.split('_td_')[0]
+        split = file_name.split('-denoised')
+        split_name = split[0]
+        split_suffix = split[1]
+
+        path = os.path.join(td_output_path, folder_name,
+                            split_name + split_suffix)
+
+        after_adaptive_file_name, blur = applyAdaptivePreprocesscingStep(
+            path, adaptive_output_path)
+
+    return "Finished Apply Auto Adaptive Preprocessing"
+
+
 @app.route("/get_blur/<file_name>")
 @cross_origin()
 def get_blur(file_name):
@@ -248,9 +269,20 @@ def run_text_recognition(filename):
     is_predict_exist = os.path.exists(predict_path)
     is_eval_exist = os.path.exists(eval_path)
 
+    eval_info = None
+    if (is_eval_exist):
+        print(eval_path)
+        eval_file = open(eval_path)
+        eval_info = json.load(eval_file)
+
     if (is_predict_exist):
+        print(predict_path)
+        predict_file = open(predict_path)
+        predict_info = json.load(predict_file)
         return {"predict_exist": is_predict_exist,
-                "eval_exist": is_eval_exist}
+                "predict_info": predict_info,
+                "eval_exist": is_eval_exist,
+                "eval_info": eval_info}
 
     vgg19_transformer = TextRecognition()
 
