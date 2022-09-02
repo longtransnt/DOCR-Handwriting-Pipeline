@@ -1,4 +1,4 @@
-DEFAULT_PATH = "/mnt/d/DOCR/OUCRU-Handwriting-Pipeline"
+DEFAULT_PATH = "/mnt/d/GitHub/OUCRU-Handwriting-Recognition"
 PAPERDETCTION_FOLDER_SUFFIX = '/PaperDetection'
 PREPROCESSING_FOLDER_SUFFIX = '/Preprocessing'
 TEXTDETECTION_FOLDER_SUFFIX = '/TextDetection'

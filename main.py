@@ -22,10 +22,10 @@ from flask import Response
 import urllib.request
 from flask import Flask, flash, request, redirect, url_for, render_template
 from werkzeug.utils import secure_filename
-
+import shutil
 
 #----------------------------Configurations for Flask------------------------------#
-UPLOAD_FOLDER = '/mnt/d/OUCRU-Handwriting-Recognition/static/uploads/'
+UPLOAD_FOLDER = '/mnt/d/GitHub/OUCRU-Handwriting-Recognition/static/input/'
 app = Flask(__name__)
 app.secret_key = "secret key"
 cors = CORS(app)
@@ -33,6 +33,7 @@ app.config['CORS_HEADERS'] = 'Content-Type'
 app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
 app.config['MAX_CONTENT_LENGTH'] = 16 * 1024 * 1024
 ALLOWED_EXTENSIONS = set(['png', 'jpg', 'jpeg', 'gif'])
+web_url = "http://localhost:3000/"
 
 #----------------------------Parse req. arguments------------------------------#
 ap = argparse.ArgumentParser()
@@ -73,6 +74,8 @@ eval_output_path = output_path + constant.EVAL_FOLDER_SUFFIX
 static_path = constant.DEFAULT_PATH + constant.STATIC_SUFFIX
 #----------------------------Flask endpoints------------------------------#
 
+def allowed_file(filename):
+	return '.' in filename and filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
 
 @app.route('/')
 @cross_origin()
@@ -80,26 +83,24 @@ def hello_world():
     print("hello world")
     return {"hello": "world"}
 
-
 @app.route('/input', methods=['POST'])
 def upload_image():
     if 'file' not in request.files:
         flash('No file part')
-        return redirect(request.url)
+        return redirect(web_url + "input")
     file = request.files['file']
     if file.filename == '':
         flash('No image selected for uploading')
-        return redirect(request.url)
+        return redirect(web_url + "input")
     if file and allowed_file(file.filename):
         filename = secure_filename(file.filename)
-        file.save(os.path.join(app.config['UPLOAD_FOLDER'], filename))
-        # print('upload_image filename: ' + filename)
+        file.save(os.path.join(UPLOAD_FOLDER, file.filename))
+        print('upload_image filename: ' + filename)
         flash('Image successfully uploaded and displayed below')
-        return render_template('upload.html', filename=filename)
+        return redirect(web_url + "input/" + file.filename)
     else:
         flash('Allowed image types are -> png, jpg, jpeg, gif')
-        return redirect(request.url)
-
+        return redirect(web_url + "input")
 
 @app.route("/manual_adaptive", methods=['POST'])
 @cross_origin()
@@ -126,7 +127,6 @@ def run_adaptive_preprocesscing_manual():
         "file_name": preview_file_name,
     }
 
-
 @app.route("/automatic_adaptive", methods=['POST'])
 @cross_origin()
 def run_adaptive_preprocesscing_automatic():
@@ -147,7 +147,6 @@ def run_adaptive_preprocesscing_automatic():
 
     return "Finished Apply Auto Adaptive Preprocessing"
 
-
 @app.route("/get_blur/<file_name>")
 @cross_origin()
 def get_blur(file_name):
@@ -160,14 +159,12 @@ def get_blur(file_name):
 
     return json_file_data
 
-
 @ app.route('/directory_exist')
 @ cross_origin()
 def check_directory_exist():
     path = request.args.get('path')
     print(path)
     return {path: os.path.exists(path)}
-
 
 def get_img_list_from_directoty(input):
     imgs_dir = [
@@ -188,7 +185,6 @@ def get_img_list_from_directoty(input):
         elif isinstance(img, np.ndarray):
             img_list += [img]
     return img_list
-
 
 @ app.route('/input_to_adaptive/<filename>')
 @ cross_origin()
@@ -213,7 +209,10 @@ def run_pipeline_to_adaptive(filename):
     # # =============================================================================
     # # Paper Detection and Preprocesscing
     # # =============================================================================
-    img = input_path + "/" + filename + ".jpg"
+    if (".jpg" in filename):
+        img = input_path + "/" + filename
+    else:
+        img = input_path + "/" + filename + ".jpg"
     name = filename
     print(img)
     print(name)
@@ -258,7 +257,6 @@ def run_pipeline_to_adaptive(filename):
             print("Null found at: ", image_name)
         img_list = get_img_list_from_directoty(input_path)
     return "Completed running Paper Detection - Processcing - Text Detection - Adaptive for selected image"
-
 
 @app.route('/run_text_recognition/<filename>')
 @cross_origin()
@@ -339,7 +337,6 @@ def run_text_recognition(filename):
             "eval_exist": is_eval_exist,
             "eval_info": eval_info}
 
-
 @app.route("/text_recognition_eval", methods=['POST'])
 @cross_origin()
 def text_recognition_evaluation():
@@ -362,7 +359,6 @@ def text_recognition_evaluation():
         "cer": cer
     }
 
-
 @app.route('/')
 @app.route('/get-input-list')
 @cross_origin()
@@ -372,7 +368,6 @@ def get_input_list():
     filenames = [str(Path(x).stem) for x in img_list]
     json_string = json.dumps(filenames)
     return json_string
-
 
 @app.route('/get-static-folder/<directory>')
 @cross_origin()
@@ -385,7 +380,6 @@ def display_output_folder(directory):
     json_string = json.dumps(subfolders)
     return json_string
 
-
 @app.route('/get-static-list/<directory>')
 @cross_origin()
 def display_output_list(directory):
@@ -395,7 +389,6 @@ def display_output_list(directory):
     print(filenames)
     json_string = json.dumps(filenames)
     return json_string
-
 
 @app.route('/get-static-list/<directory>/<category>')
 @cross_origin()
@@ -407,26 +400,22 @@ def display_output_list_by_category(directory, category):
     json_string = json.dumps(filenames)
     return json_string
 
-
 @app.route('/display-input/<name>')
 @cross_origin()
 def display_input_image(name):
     # print('display_image filename: ' + filename)
     return redirect(url_for('static', filename='input/' + name), code=301)
 
-
 @app.route('/display-adpt-denoised-output/<directory>/<category>/<filename>')
 @cross_origin()
 def display_adaptive_image(directory, category, filename):
     return redirect(url_for('static', filename='output/' + directory + '/denoised-output/' + category + '/' + filename), code=301)
-
 
 @app.route('/display-output/<directory>/<filename>')
 @cross_origin()
 def display_ouptput_image(directory, filename):
     # print('display_image filename: ' + filename)
     return redirect(url_for('static', filename='output/' + directory + '/' + filename), code=301)
-
 
 @app.route('/get-static-denoised-list/<directory>/<category>')
 @cross_origin()
@@ -439,12 +428,10 @@ def display_output_list_denoised(directory, category):
     json_string = json.dumps(filenames)
     return json_string
 
-
 @app.route('/display-sub-output/<directory>/<category>/<filename>')
 @cross_origin()
 def display_uncategorized_image(directory, category, filename):
     return redirect(url_for('static', filename='output/' + directory + '/' + category + '/' + filename), code=301)
-
 
 def getImageUrl(path, name, category):
     if (category is None):
@@ -452,7 +439,6 @@ def getImageUrl(path, name, category):
     else:
         url = "http://localhost:5000/display-sub-output/${path}/${category}/${name}.jpg"
     return url
-
 
 if __name__ == '__main__':
 
