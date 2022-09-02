@@ -276,7 +276,6 @@ def run_text_recognition(filename):
         eval_info = json.load(eval_file)
 
     if (is_predict_exist):
-        print(predict_path)
         predict_file = open(predict_path)
         predict_info = json.load(predict_file)
         return {"predict_exist": is_predict_exist,
@@ -296,23 +295,26 @@ def run_text_recognition(filename):
     tr_img_list = get_img_list_from_directoty(adaptive_directory)
     tr_filenames = [str(Path(x).stem) for x in tr_img_list]
 
+    coordinate_file = open(td_output_path + "/" + filename +
+                           "pdpd/" + "coordinates.json")
+    coord_file_data = json.load(coordinate_file)
+
     dashed_line = '=' * 100
     head = f'{"filename":35s}\t' \
         f'{"predicted_string (non-bigram)":35s}\t' \
         f'{"predicted_string (bigram)":35s}'
 
-    text_recognition_csv_headers = [
-        'filename', 'predicted_string (non-correction)', 'predicted_string (correction)']
-    text_recognition_csv = pd.DataFrame(
-        columns=text_recognition_csv_headers)
+    text_recognition_json_result = []
 
     print(f'{dashed_line}\n{head}\n{dashed_line}')
     for img, name in zip(tr_img_list, tr_filenames):
+        if(img.endswith(".json")):
+            continue
         split = name.split('-denoised')
+        print("SPLIT", split)
         split_name = split[0]
-        split_suffix = split[1]
         cor_dict = list(
-            filter(lambda line: line['image_name'].split('.jpg')[0] == split_name, json_file_data))
+            filter(lambda line: line['image_name'].split('.jpg')[0] == split_name, coord_file_data))
 
         prediction, correction = vgg19_transformer.infer(img)
         row_output = f'{name:20s}\t{prediction:35s}' \
@@ -326,11 +328,16 @@ def run_text_recognition(filename):
 
         text_recognition_json_result.append(cor_dict[0])
 
-    base = Path(tr_output_path)
-    jsonpath = base / (name + ".json")
+    jsonpath = Path(predict_path)
+    print("JSONPATH: ", jsonpath)
     jsonpath.write_text(json.dumps(text_recognition_json_result))
 
-    return {"exist": False}
+    predict_file = open(predict_path)
+    predict_info = json.load(predict_file)
+    return {"predict_exist": is_predict_exist,
+            "predict_info": predict_info,
+            "eval_exist": is_eval_exist,
+            "eval_info": eval_info}
 
 
 @app.route("/text_recognition_eval", methods=['POST'])
