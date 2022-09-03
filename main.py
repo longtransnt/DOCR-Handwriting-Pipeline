@@ -163,7 +163,7 @@ def get_blur(file_name):
     #     # returns JSON object as
     #     # a dictionary
     json_file_data = json.load(json_file)
-
+    print(json_file_data)
     return json_file_data
 
 
@@ -199,6 +199,25 @@ def get_img_list_from_directoty(input):
 @ app.route('/input_to_adaptive/<filename>')
 @ cross_origin()
 def run_pipeline_to_adaptive(filename):
+    pd_path = pd_output_path + "/" + filename + "pd.jpg"
+    pp_path = pp_output_path + "/" + filename + "pd_pp.jpg"
+    td_dir_path = td_output_path + "/" + filename + "pd"
+    print(td_dir_path)
+    adaptive_dir_path = adaptive_output_path + "/" + filename.split("pd")[0]
+    print(adaptive_dir_path)
+
+    is_paper_detection_exist = os.path.exists(pd_path)
+    print(is_paper_detection_exist)
+    is_preprocessing_exist = os.path.exists(pp_path)
+    print(is_preprocessing_exist)
+    is_text_detection_folder_exist = os.path.isdir(td_dir_path)
+    print(is_text_detection_folder_exist)
+    is_adaptive_folder_exist = os.path.isdir(adaptive_dir_path)
+    print(is_adaptive_folder_exist)
+
+    if (is_paper_detection_exist and is_preprocessing_exist and is_text_detection_folder_exist and is_adaptive_folder_exist):
+        return "Completed running Paper Detection - Processcing - Text Detection - Adaptive for selected image"
+
     maskRCNN = PaperDetection.MaskCRNN(
         output_path=pd_output_path, annotated_output_path=pd_annotated_output_path)
     if(maskRCNN):
