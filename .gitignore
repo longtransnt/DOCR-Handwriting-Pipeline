@@ -9,5 +9,7 @@ Output/
 /TextRecognition/TextRecognition.zip
 main_trainer_mmocr.py 
 /Backup
+
+/Misc/constant.py
 # cache
 .pyc
