@@ -97,7 +97,7 @@ def upload_image():
         return redirect(web_url + "input")
     if file and allowed_file(file.filename):
         filename = secure_filename(file.filename)
-        file.save(os.path.join(UPLOAD_FOLDER, file.filename))
+        file.save(os.path.join(constant.UPLOAD_FOLDER, file.filename))
         print('upload_image filename: ' + filename)
         img_name = file.filename[:-4]
         flash('Image successfully uploaded and displayed below')
@@ -252,12 +252,24 @@ def run_pipeline_to_adaptive(filename):
                 text_detection_folder)
             cropped_filenames = [str(Path(x).stem)
                                  for x in cropped_img_list]
-
+# #     # ======================================================================================
+# #     # Adaptive Preprocessing
+# #     # ======================================================================================
+            adaptive_blur_collumns = ['image_name', 'blur']
+            adaptive_blur_file = pd.DataFrame(columns=adaptive_blur_collumns)
             for cropped_img, cropped_filename in zip(cropped_img_list, cropped_filenames):
                 if(cropped_img.endswith(".csv") or cropped_img.endswith(".json") or "visualize" in cropped_img):
                     continue
-                applyAdaptivePreprocesscingStep(
+                file_name, mean = applyAdaptivePreprocesscingStep(
                     cropped_img, adaptive_output_path)
+
+                adaptive_row = pd.DataFrame(
+                    [file_name, mean], index=adaptive_blur_collumns).T
+                adaptive_blur_file = pd.concat([adaptive_blur_file,
+                                               adaptive_row])
+
+            adaptive_blur_file.to_json(
+                orient="records", path_or_buf=adaptive_output_path + "/" + file_name.split("pdpd")[0] + "/" + 'blur.json')
             print('─' * 100)
             # td.operation(input_path = td_input)
             records_count += 1
