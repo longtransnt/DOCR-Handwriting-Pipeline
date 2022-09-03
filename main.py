@@ -99,8 +99,9 @@ def upload_image():
         filename = secure_filename(file.filename)
         file.save(os.path.join(UPLOAD_FOLDER, file.filename))
         print('upload_image filename: ' + filename)
+        img_name = file.filename[:-4]
         flash('Image successfully uploaded and displayed below')
-        return redirect(web_url + "input/" + file.filename)
+        return redirect(web_url + "input/" + img_name)
     else:
         flash('Allowed image types are -> png, jpg, jpeg, gif')
         return redirect(web_url + "input")
@@ -218,10 +219,9 @@ def run_pipeline_to_adaptive(filename):
     # # =============================================================================
     # # Paper Detection and Preprocesscing
     # # =============================================================================
-    if (".jpg" in filename):
-        img = input_path + "/" + filename
-    else:
-        img = input_path + "/" + filename + ".jpg"
+
+    img = input_path + "/" + filename + ".jpg"
+    name = filename
     print(img)
     print(name)
     im = cv2.imread(img)
