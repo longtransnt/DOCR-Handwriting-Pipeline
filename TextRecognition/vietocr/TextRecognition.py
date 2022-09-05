@@ -118,8 +118,8 @@ class TextRecognition(object):
         # Something something
 
     def dictionaryCorrection(self, word):
-        dictionary = {"động": 2, "Magnesulfate": 3, "Midazolam": 2, "Arduan": 1,
-                      "gồng": 1, "HA": 1, "lần": 1, "Hết": 1, "kiểm": 1, "SpO2": 1, "mmHg": 2, "FiO2": 1, "ổn": 1, "tỉnh": 1, "nằm": 1}
+        dictionary = {"đang": 0, "động": 1, "Magnesulfate": 3, "Midazolam": 2, "Arduan": 1,
+                      "gồng": 1, "HA": 1, "lần": 1, "Hết": 1, "kiểm": 1, "SpO2": 1, "mmHg": 2, "FiO2": 1, "tỉnh": 1, "nằm": 1}
         distance_resuls = {}
         for d, value in dictionary.items():
             distance = self.levenshteinDistance(word.lower(), d.lower())

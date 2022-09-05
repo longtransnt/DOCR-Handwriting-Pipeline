@@ -143,11 +143,10 @@ def run_adaptive_preprocesscing_automatic():
         folder_name = file_name.split('_td_')[0]
         split = file_name.split('-denoised')
         split_name = split[0]
-        split_suffix = split[1]
+        split_suffix = ".jpg"
 
         path = os.path.join(td_output_path, folder_name,
                             split_name + split_suffix)
-
         after_adaptive_file_name, blur = applyAdaptivePreprocesscingStep(
             path, adaptive_output_path)
 
@@ -196,28 +195,35 @@ def get_img_list_from_directoty(input):
     return img_list
 
 
-@ app.route('/input_to_adaptive/<filename>')
+@ app.route('/input_to_adaptive/<filename>/<isRerun>')
 @ cross_origin()
-def run_pipeline_to_adaptive(filename):
+def run_pipeline_to_adaptive(filename, isRerun):
     pd_path = pd_output_path + "/" + filename + "pd.jpg"
     pp_path = pp_output_path + "/" + filename + "pd_pp.jpg"
     td_dir_path = td_output_path + "/" + filename + "pd"
-    print(td_dir_path)
     adaptive_dir_path = adaptive_output_path + "/" + filename.split("pd")[0]
-    print(adaptive_dir_path)
 
     is_paper_detection_exist = os.path.exists(pd_path)
-    print(is_paper_detection_exist)
     is_preprocessing_exist = os.path.exists(pp_path)
-    print(is_preprocessing_exist)
     is_text_detection_folder_exist = os.path.isdir(td_dir_path)
-    print(is_text_detection_folder_exist)
     is_adaptive_folder_exist = os.path.isdir(adaptive_dir_path)
-    print(is_adaptive_folder_exist)
 
-    if (is_paper_detection_exist and is_preprocessing_exist and is_text_detection_folder_exist and is_adaptive_folder_exist):
-        return "Completed running Paper Detection - Processcing - Text Detection - Adaptive for selected image"
+    if (isRerun == "false"):
+        if (is_paper_detection_exist and is_preprocessing_exist and is_text_detection_folder_exist and is_adaptive_folder_exist):
+            return "Completed running Paper Detection - Processcing - Text Detection - Adaptive for selected image"
 
+    if (is_paper_detection_exist):
+        os.unlink(pd_path)
+        print("Is PD exist anymore ", os.path.exists(pd_path))
+    if (is_preprocessing_exist):
+        os.unlink(pp_path)
+        print("Is PP exist anymore", os.path.exists(pp_path))
+    if (is_text_detection_folder_exist):
+        shutil.rmtree(td_dir_path)
+        print("Is TD exist anymore", os.path.isdir(td_dir_path))
+    if (is_adaptive_folder_exist):
+        shutil.rmtree(adaptive_dir_path)
+        print("Is Adaptive exist anymore", os.path.isdir(adaptive_dir_path))
     maskRCNN = PaperDetection.MaskCRNN(
         output_path=pd_output_path, annotated_output_path=pd_annotated_output_path)
     if(maskRCNN):
@@ -248,7 +254,7 @@ def run_pipeline_to_adaptive(filename):
     # Encode the image as Base64
     with open(img, "rb") as img_file:
         data = base64.b64encode(img_file.read())
-
+        print()
         # Paper Detection
         cropped_img, image_name = maskRCNN.predict(
             im=im, name=name, data=data)
@@ -298,9 +304,9 @@ def run_pipeline_to_adaptive(filename):
     return "Completed running Paper Detection - Processcing - Text Detection - Adaptive for selected image"
 
 
-@app.route('/run_text_recognition/<filename>')
+@app.route('/run_text_recognition/<filename>/<isRerun>')
 @cross_origin()
-def run_text_recognition(filename):
+def run_text_recognition(filename, isRerun="false"):
     predict_path = tr_output_path + "/" + filename + "_tr.json"
     eval_path = eval_output_path + "/" + filename + "_eval.json"
 
@@ -314,12 +320,16 @@ def run_text_recognition(filename):
         eval_info = json.load(eval_file)
 
     if (is_predict_exist):
-        predict_file = open(predict_path)
-        predict_info = json.load(predict_file)
-        return {"predict_exist": is_predict_exist,
-                "predict_info": predict_info,
-                "eval_exist": is_eval_exist,
-                "eval_info": eval_info}
+        if (isRerun == "false"):
+            predict_file = open(predict_path)
+            predict_info = json.load(predict_file)
+            return {"predict_exist": is_predict_exist,
+                    "predict_info": predict_info,
+                    "eval_exist": is_eval_exist,
+                    "eval_info": eval_info}
+        else:
+            os.remove(predict_path)
+            print("Is TR file exist anymore: ", os.path.exists(predict_path))
 
     vgg19_transformer = TextRecognition()
 
@@ -359,8 +369,6 @@ def run_text_recognition(filename):
             f'\t{correction:35s}'
         print(row_output)
         en = correction.encode("utf8")
-        print(en)
-        print(en.decode("utf8"))
 
         cor_dict[0]["ground_truth"] = en.decode("utf8")
 
@@ -553,6 +561,10 @@ if __name__ == '__main__':
                                                      name=processed_img_path, data=data)
             print("Text Detection Finished - Result exported in : ",
                   text_detection_folder)
+
+        # #     # ======================================================================================
+        # #     # Adaptive
+        # #     # ======================================================================================
 
             cropped_img_list = get_img_list_from_directoty(
                 text_detection_folder)
