@@ -109,6 +109,7 @@ class MaskCRNN(object):
 
         pred_masks_list = outputs["instances"].pred_masks.to('cpu').tolist()
         if len(pred_masks_list) > 0:
+
             # Pred masks for class 0
             pred_masks = pred_masks_list[0]
 
@@ -125,7 +126,6 @@ class MaskCRNN(object):
                            scale=1,
                            instance_mode=ColorMode.IMAGE_BW  # remove the colors of unsegmented pixels
                            )
-
             roi_bill_img = four_point_transform(im, box)
             v = v.draw_instance_predictions(outputs["instances"].to("cpu"))
             # + ("/" if self.output_path[-1] != '/' else "")
@@ -149,6 +149,9 @@ class MaskCRNN(object):
 
             cv2.imwrite(image_name, return_img)
             return return_img, image_name
+        image_name = self.output_path + "/" + name + "pd" + ".jpg"
+        cv2.imwrite(image_name, im)
+        return im, image_name
 
     def convertToAnnotation(self, name, data, box):
         annotatation = {
