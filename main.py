@@ -7,6 +7,8 @@ from TextDetection import TextDetection_Detectron2
 from TextDetection_PostProcesscing.AdaptivePreprocesscing import applyAdaptivePreprocesscingStep, applyAdaptivePreprocesscingManualStep, denoise
 from TextRecognition.vietocr.TextRecognition import TextRecognition
 from TextRecognition.vietocr.vietocr.tool.utils import compute_accuracy
+from datetime import datetime
+import time
 import sys
 import base64
 import json
@@ -259,12 +261,13 @@ def run_pipeline_to_adaptive(filename, isRerun):
         cropped_img, image_name = maskRCNN.predict(
             im=im, name=name, data=data)
         if(image_name is not None):
-
+            print("Image name: " + image_name)
             # Preprocesscing
             processed_img, processed_img_path = Amp.applyPreprocesscingStep(
                 image_name=image_name, output_dir=pp_output_path)
             print('─' * 100)
             print("Preprocessing Image: " + processed_img_path)
+
 # #     # ======================================================================================
 # #     # Text Detection
 # #     # ======================================================================================
@@ -348,9 +351,10 @@ def run_text_recognition(filename, isRerun="false"):
     coord_file_data = json.load(coordinate_file)
 
     dashed_line = '=' * 100
-    head = f'{"filename":35s}\t' \
-        f'{"predicted_string (non-bigram)":35s}\t' \
-        f'{"predicted_string (bigram)":35s}'
+    head = f'{"filename":20s}\t' \
+        f'{"predicted_string (non-bigram)":20s}\t' \
+        f'{"predicted_string (bigram)":20s}\t' \
+        f'{"prediction_time":10s}\t' \
 
     text_recognition_json_result = []
 
@@ -359,14 +363,19 @@ def run_text_recognition(filename, isRerun="false"):
         if(img.endswith(".json")):
             continue
         split = name.split('-denoised')
-        print("SPLIT", split)
         split_name = split[0]
         cor_dict = list(
             filter(lambda line: line['image_name'].split('.jpg')[0] == split_name, coord_file_data))
 
+        datetime1 = datetime.datetime.now()
         prediction, correction = vgg19_transformer.infer(img)
-        row_output = f'{name:20s}\t{prediction:35s}' \
-            f'\t{correction:35s}'
+        datetime2 = datetime.datetime.now()
+        difference = str(datetime2 - datetime1)
+
+        row_output = f'{name:20s}\t{prediction:20s}' \
+            f'\t{correction:20s}' \
+            f'\t{difference:20s}'
+
         print(row_output)
         en = correction.encode("utf8")
 
@@ -375,7 +384,6 @@ def run_text_recognition(filename, isRerun="false"):
         text_recognition_json_result.append(cor_dict[0])
 
     jsonpath = Path(predict_path)
-    print("JSONPATH: ", jsonpath)
     jsonpath.write_text(json.dumps(text_recognition_json_result))
 
     predict_file = open(predict_path)
@@ -553,12 +561,13 @@ if __name__ == '__main__':
                         image_name=image_name, output_dir=pp_output_path)
                     print('─' * 100)
                     print("Preprocessing Image: " + processed_img_path)
+                original_image_path = pd_output_path + "/" + image_name + "pd.jpg"
         # #     # ======================================================================================
         # #     # Text Detection
         # #     # ======================================================================================
 
             text_detection_folder = fastRCNN.predict(original=cropped_img,
-                                                     name=processed_img_path, data=data)
+                                                     name=original_image_path, data=data)
             print("Text Detection Finished - Result exported in : ",
                   text_detection_folder)
 
