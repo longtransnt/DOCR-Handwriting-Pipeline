@@ -1,7 +1,9 @@
+from Misc.utils import get_img_list_from_directoty
 import cv2
 import matplotlib.pyplot as plt
 import numpy as np
 import os
+import pandas as pd
 from natsort import os_sorted
 from pathlib import Path
 from skimage.filters import threshold_sauvola
@@ -9,6 +11,33 @@ from skimage.filters import threshold_sauvola
 # =============================================================================
 # Blur Detection
 # =============================================================================
+
+
+def AdaptiveProcessing(text_detection_folder, adaptive_output_path):
+    cropped_img_list = get_img_list_from_directoty(
+        text_detection_folder)
+    cropped_filenames = [str(Path(x).stem)
+                         for x in cropped_img_list]
+
+    adaptive_blur_collumns = ['image_name', 'blur']
+    adaptive_bur_file = pd.DataFrame(columns=adaptive_blur_collumns)
+
+    for cropped_img, cropped_filename in zip(cropped_img_list, cropped_filenames):
+        if(cropped_img.endswith(".csv") or cropped_img.endswith(".json") or "visualize" in cropped_img):
+            continue
+        print(cropped_img)
+        file_name, mean = applyAdaptivePreprocesscingStep(
+            cropped_img, adaptive_output_path)
+
+        adaptive_row = pd.DataFrame(
+            [file_name, mean], index=adaptive_blur_collumns).T
+        adaptive_bur_file = pd.concat([adaptive_bur_file,
+                                       adaptive_row])
+
+    adaptive_bur_file.to_json(
+        orient="records", path_or_buf=adaptive_output_path + "/" + file_name.split("_td")[0] + "/" + 'blur.json')
+    print('─' * 100)
+    # td.operation(input_path = td_input)
 
 
 def detect_blur_fft(image, size=15, thresh=10, vis=False):
@@ -149,7 +178,7 @@ def denoise(output_dir_denoised, img_path, blur_degree=33, tile_size=(8, 8), vis
         # cv2_imshow(img_denoised)
         print('-'*80)
 
-    original_name = image_name.split('pdpd')[0]
+    original_name = image_name.split('_td_d2')[0]
 
     print(original_name)
     isExist = os.path.exists(
