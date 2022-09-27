@@ -60,8 +60,7 @@ class FasterRCNN(object):
 
     def predict(self, original, name, data):
         td_input_img = cv2.imread(name)
-
-        original_path = name[:-7] + ".jpg"
+        original_path = name.split("pd_pp")[0] + ".jpg"
         path, original_file_name_full = os.path.split(original_path)
         original_bare_file_name, suffix = os.path.splitext(
             original_file_name_full)
